@@ -1,0 +1,44 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build, test, and package
+        run: ./scripts/release.sh
+
+      - name: Upload build artifact (dry run)
+        if: "!startsWith(github.ref, 'refs/tags/')"
+        uses: actions/upload-artifact@v4
+        with:
+          name: FlowerPassword
+          path: dist/*.zip
+
+      - name: Publish release
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ZIP=$(ls dist/*.zip)
+          {
+            echo "Requires macOS 14 or later. Universal binary (Apple Silicon and Intel)."
+            echo
+            echo "The app is not notarized; see the README for the one-time Gatekeeper steps."
+            echo
+            echo "## SHA-256"
+            echo
+            echo '```'
+            shasum -a 256 "$ZIP" | sed 's|dist/||'
+            echo '```'
+          } > notes.md
+          gh release create "$GITHUB_REF_NAME" "$ZIP" --title "$GITHUB_REF_NAME" --notes-file notes.md
