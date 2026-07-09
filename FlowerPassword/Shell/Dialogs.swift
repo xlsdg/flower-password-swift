@@ -15,21 +15,33 @@ enum Dialogs {
 
     /// Returns true when the user confirmed quitting.
     static func confirmQuit(_ l10n: L10n) -> Bool {
-        let alert = makeAlert(style: .informational, message: l10n.quitMessage)
-        alert.addButton(withTitle: l10n.quitConfirm)
-        alert.addButton(withTitle: l10n.quitCancel)
-        NSApp.activate(ignoringOtherApps: true)
-        return alert.runModal() == .alertFirstButtonReturn
+        ask(
+            style: .informational, message: l10n.quitMessage,
+            confirm: l10n.quitConfirm, dismiss: l10n.quitCancel)
     }
 
-    /// Returns true when the user chose to open the download page.
+    /// Returns true when the user chose to install the update in place.
     static func updateAvailable(_ l10n: L10n, current: String, latest: String) -> Bool {
-        let message = l10n.updateAvailableMessage(current, latest)
-        let alert = makeAlert(style: .informational, message: message, detail: l10n.updateAvailableDetail)
-        alert.addButton(withTitle: l10n.ok)
-        alert.addButton(withTitle: l10n.cancel)
-        NSApp.activate(ignoringOtherApps: true)
-        return alert.runModal() == .alertFirstButtonReturn
+        ask(
+            style: .informational, message: l10n.updateAvailableMessage(current, latest),
+            detail: l10n.updateInstallDetail, confirm: l10n.updateInstallButton,
+            dismiss: l10n.updateLaterButton)
+    }
+
+    /// Fallback for releases without a signed archive: returns true when
+    /// the user chose to open the download page.
+    static func updateAvailableManual(_ l10n: L10n, current: String, latest: String) -> Bool {
+        ask(
+            style: .informational, message: l10n.updateAvailableMessage(current, latest),
+            detail: l10n.updateAvailableDetail, confirm: l10n.ok, dismiss: l10n.cancel)
+    }
+
+    /// Returns true when the user chose to open the download page after an
+    /// in-place install failed.
+    static func updateInstallFailed(_ l10n: L10n, detail: String) -> Bool {
+        ask(
+            style: .critical, message: l10n.updateInstallFailedMessage, detail: detail,
+            confirm: l10n.updateOpenPageButton, dismiss: l10n.cancel)
     }
 
     static func noUpdate(_ l10n: L10n, version: String) {
@@ -42,6 +54,17 @@ enum Dialogs {
 
     static func updateError(_ l10n: L10n, detail: String) {
         runAlert(style: .critical, message: l10n.updateErrorMessage, detail: detail)
+    }
+
+    private static func ask(
+        style: NSAlert.Style, message: String, detail: String? = nil,
+        confirm: String, dismiss: String
+    ) -> Bool {
+        let alert = makeAlert(style: style, message: message, detail: detail)
+        alert.addButton(withTitle: confirm)
+        alert.addButton(withTitle: dismiss)
+        NSApp.activate(ignoringOtherApps: true)
+        return alert.runModal() == .alertFirstButtonReturn
     }
 
     private static func makeAlert(style: NSAlert.Style, message: String, detail: String? = nil) -> NSAlert {

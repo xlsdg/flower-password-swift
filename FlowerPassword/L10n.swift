@@ -43,6 +43,11 @@ struct L10n: Sendable {
     let updateVersionMessage: @Sendable (_ version: String) -> String
     let updateAvailableMessage: @Sendable (_ current: String, _ latest: String) -> String
     let updateAvailableDetail: String
+    let updateInstallDetail: String
+    let updateInstallButton: String
+    let updateLaterButton: String
+    let updateInstallFailedMessage: String
+    let updateOpenPageButton: String
     let updateNoUpdateMessage: String
     let updateErrorMessage: String
     let ok: String
@@ -108,6 +113,11 @@ struct L10n: Sendable {
         updateVersionMessage: { "当前版本:\($0)" },
         updateAvailableMessage: { "发现新版本!\n\n当前版本:\($0)\n最新版本:\($1)" },
         updateAvailableDetail: "点击确定将打开浏览器,跳转到下载页面。",
+        updateInstallDetail: "将自动下载并安装更新,完成后应用会自动重启。",
+        updateInstallButton: "安装并重启",
+        updateLaterButton: "稍后",
+        updateInstallFailedMessage: "自动更新失败。",
+        updateOpenPageButton: "打开下载页面",
         updateNoUpdateMessage: "您正在使用最新版本。",
         updateErrorMessage: "检查更新失败。",
         ok: "确定",
@@ -149,6 +159,11 @@ struct L10n: Sendable {
         updateVersionMessage: { "目前版本:\($0)" },
         updateAvailableMessage: { "發現新版本!\n\n目前版本:\($0)\n最新版本:\($1)" },
         updateAvailableDetail: "點擊確定將開啟瀏覽器,跳轉至下載頁面。",
+        updateInstallDetail: "將自動下載並安裝更新,完成後應用程式會自動重啟。",
+        updateInstallButton: "安裝並重啟",
+        updateLaterButton: "稍後",
+        updateInstallFailedMessage: "自動更新失敗。",
+        updateOpenPageButton: "開啟下載頁面",
         updateNoUpdateMessage: "您正在使用最新版本。",
         updateErrorMessage: "檢查更新失敗。",
         ok: "確定",
@@ -192,6 +207,12 @@ struct L10n: Sendable {
         updateVersionMessage: { "Current version: \($0)" },
         updateAvailableMessage: { "A new version is available!\n\nCurrent: \($0)\nLatest: \($1)" },
         updateAvailableDetail: "Click OK to open the download page in your browser.",
+        updateInstallDetail:
+            "The update will be downloaded, verified, and installed automatically; the app then relaunches.",
+        updateInstallButton: "Install and Relaunch",
+        updateLaterButton: "Later",
+        updateInstallFailedMessage: "Automatic update failed.",
+        updateOpenPageButton: "Open Download Page",
         updateNoUpdateMessage: "You are using the latest version.",
         updateErrorMessage: "Failed to check for updates.",
         ok: "OK",

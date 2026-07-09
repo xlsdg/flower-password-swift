@@ -4,15 +4,19 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-VERSION=$(grep -m1 MARKETING_VERSION FlowerPassword.xcodeproj/project.pbxproj | sed 's/[^0-9.]//g')
 APP="build/Build/Products/Release/FlowerPassword.app"
-ZIP="dist/FlowerPassword-${VERSION}.zip"
 
 swift test --package-path FlowerPasswordCore
 
 xcodebuild -project FlowerPassword.xcodeproj -scheme FlowerPassword \
   -configuration Release -derivedDataPath build \
   ARCHS="arm64 x86_64" ONLY_ACTIVE_ARCH=NO clean build
+
+# Read the version from the built product, not the pbxproj: the archive name
+# must match what the shipped app reports at runtime, because
+# SelfUpdater.validate compares the two during in-place updates.
+VERSION=$(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' "$APP/Contents/Info.plist")
+ZIP="dist/FlowerPassword-${VERSION}.zip"
 
 mkdir -p dist
 rm -f "$ZIP"

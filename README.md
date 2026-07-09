@@ -12,7 +12,7 @@ Flower Password is a "nothing stored" approach to password management: remember 
 - Clipboard clears itself 10 seconds after a copy (and leaves anything you copied in the meantime alone)
 - If the clipboard holds a URL, the registrable domain is prefilled as the distinction code (`www.google.co.uk` → `google`)
 - Light / dark / system themes; English, Simplified Chinese, and Traditional Chinese UI
-- Optional launch at login; manual update check
+- Optional launch at login; one-click in-app updates with Ed25519-verified downloads
 
 ## Install
 
@@ -46,6 +46,10 @@ Alternatively, remove the quarantine attribute in Terminal:
 xattr -dr com.apple.quarantine /Applications/FlowerPassword.app
 ```
 
+### Updates
+
+"Check for Updates" in the menu installs new versions in place: the app downloads the release archive, verifies it against an Ed25519 public key baked into the binary, swaps itself out, and relaunches. In-app updates are not quarantined, so the Gatekeeper approval above is only ever needed once.
+
 ## Usage
 
 1. Click the menu bar icon or press ⌘⌥S (the app lives in the menu bar only — no Dock icon)
@@ -67,7 +71,7 @@ For example, memory password `123456` with distinction code `taobao` yields `Kfd
 ## Privacy
 
 - The memory password lives in memory only and is **never written to disk**; the app stores and syncs no passwords
-- The only network request is the manual "Check for Updates" call to the GitHub Releases API — no telemetry, no analytics, no automatic connections
+- The only network requests are the manual "Check for Updates" call to the GitHub Releases API and, after you confirm an update, the download of the new release from GitHub — no telemetry, no analytics, no automatic connections
 
 ## Performance
 

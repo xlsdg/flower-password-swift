@@ -17,11 +17,27 @@ jobs:
       - name: Build, test, and package
         run: ./scripts/release.sh
 
+      - name: Sign update archive
+        env:
+          ED25519_PRIVATE_KEY: ${{ secrets.ED25519_PRIVATE_KEY }}
+        run: |
+          ZIP=$(ls dist/*.zip)
+          swift scripts/sign-update.swift sign "$ZIP"
+          PUBLIC_KEY=$(sed -n 's/.*publicKeyBase64 = "\([^"]*\)".*/\1/p' \
+            FlowerPassword/Shell/SelfUpdater.swift)
+          if [ -z "$PUBLIC_KEY" ]; then
+            echo "Embedded public key not found in SelfUpdater.swift" >&2
+            exit 1
+          fi
+          swift scripts/sign-update.swift verify "$PUBLIC_KEY" "$ZIP" "$ZIP.sig"
+
       - name: Upload build artifact (dry run)
         if: "!startsWith(github.ref, 'refs/tags/')"
         uses: actions/upload-artifact@v7
         with:
           name: FlowerPassword
+          # Deliberately excludes the .sig: dry runs should not leave signed,
+          # installable archives in artifact storage.
           path: dist/*.zip
 
       - name: Publish release
@@ -37,13 +53,25 @@ jobs:
             exit 1
           fi
           if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
-            echo "Release $GITHUB_REF_NAME already exists; skipping creation"
+            assets=$(gh release view "$GITHUB_REF_NAME" --json assets --jq '.assets[].name')
+            for asset in "$(basename "$ZIP")" "$(basename "$ZIP").sig"; do
+              if ! printf '%s\n' "$assets" | grep -Fqx "$asset"; then
+                echo "Release $GITHUB_REF_NAME exists but is missing $asset;" >&2
+                echo "a partial publish cannot be repaired by re-running (a rebuilt" >&2
+                echo "archive would not match the published one). Delete the release" >&2
+                echo "with 'gh release delete $GITHUB_REF_NAME' and re-run." >&2
+                exit 1
+              fi
+            done
+            echo "Release $GITHUB_REF_NAME already exists with all assets; skipping creation"
             exit 0
           fi
           {
             echo "Requires macOS 14 or later. Universal binary (Apple Silicon and Intel)."
             echo
             echo "The app is not notarized; see the README for the one-time Gatekeeper steps."
+            echo "Existing installs can update in place via \"Check for Updates\" in the menu;"
+            echo "the download is verified against the Ed25519 signature in the \`.zip.sig\` asset."
             echo
             echo "## SHA-256"
             echo
@@ -51,7 +79,7 @@ jobs:
             shasum -a 256 "$ZIP" | sed 's|dist/||'
             echo '```'
           } > notes.md
-          gh release create "$GITHUB_REF_NAME" "$ZIP" --title "$GITHUB_REF_NAME" --notes-file notes.md
+          gh release create "$GITHUB_REF_NAME" "$ZIP" "$ZIP.sig" --title "$GITHUB_REF_NAME" --notes-file notes.md
 
       - name: Check out Homebrew tap
         if: startsWith(github.ref, 'refs/tags/')

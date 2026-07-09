@@ -1,8 +1,10 @@
 import AppKit
 
 /// Manual update check against the GitHub releases API: compare the latest
-/// tag against the bundle version, offer to open the release page, and
-/// report errors verbatim.
+/// tag against the bundle version and, when the release carries a signed
+/// archive, download, verify, install, and relaunch in place. Releases
+/// without a signature fall back to opening the release page, as does any
+/// install failure.
 @MainActor
 final class UpdateChecker {
     private let state: AppState
@@ -27,19 +29,54 @@ final class UpdateChecker {
                 let latest =
                     release.tagName.hasPrefix("v")
                     ? String(release.tagName.dropFirst()) : release.tagName
-                if latest.compare(current, options: .numeric) == .orderedDescending {
-                    if Dialogs.updateAvailable(l10n, current: current, latest: latest),
-                        let url = URL(string: release.htmlURL)
-                    {
-                        NSWorkspace.shared.open(url)
-                    }
-                } else {
+                guard latest.compare(current, options: .numeric) == .orderedDescending else {
                     Dialogs.noUpdate(l10n, version: current)
+                    return
+                }
+                if let update = Self.signedArchive(in: release, version: latest) {
+                    guard Dialogs.updateAvailable(l10n, current: current, latest: latest) else {
+                        return
+                    }
+                    do {
+                        // On success install() relaunches and never returns.
+                        try await SelfUpdater.install(
+                            zipURL: update.archive,
+                            signatureURL: update.signature,
+                            expectedVersion: latest
+                        )
+                    } catch {
+                        if Dialogs.updateInstallFailed(l10n, detail: error.localizedDescription) {
+                            Self.openReleasePage(release)
+                        }
+                    }
+                } else if Dialogs.updateAvailableManual(l10n, current: current, latest: latest) {
+                    Self.openReleasePage(release)
                 }
             } catch {
                 Dialogs.updateError(l10n, detail: error.localizedDescription)
             }
         }
+    }
+
+    private static func openReleasePage(_ release: Release) {
+        if let url = URL(string: release.htmlUrl) {
+            NSWorkspace.shared.open(url)
+        }
+    }
+
+    /// The release's zip asset paired with its Ed25519 signature asset, or
+    /// nil when the release cannot be auto-installed. The archive name is
+    /// the contract scripts/release.sh produces.
+    private static func signedArchive(in release: Release, version: String) -> (archive: URL, signature: URL)? {
+        let archiveName = "FlowerPassword-\(version).zip"
+        guard
+            let zip = release.assets.first(where: { $0.name == archiveName }),
+            let signature = release.assets.first(where: { $0.name == zip.name + ".sig" }),
+            let zipURL = URL(string: zip.browserDownloadUrl), zipURL.scheme == "https",
+            let signatureURL = URL(string: signature.browserDownloadUrl),
+            signatureURL.scheme == "https"
+        else { return nil }
+        return (zipURL, signatureURL)
     }
 
     private static var currentVersion: String {
@@ -48,11 +85,12 @@ final class UpdateChecker {
 
     private struct Release: Decodable {
         let tagName: String
-        let htmlURL: String
+        let htmlUrl: String
+        let assets: [Asset]
 
-        enum CodingKeys: String, CodingKey {
-            case tagName = "tag_name"
-            case htmlURL = "html_url"
+        struct Asset: Decodable {
+            let name: String
+            let browserDownloadUrl: String
         }
     }
 
@@ -68,6 +106,8 @@ final class UpdateChecker {
         if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
             throw HTTPStatusError(statusCode: http.statusCode)
         }
-        return try JSONDecoder().decode(Release.self, from: data)
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        return try decoder.decode(Release.self, from: data)
     }
 }
