@@ -30,6 +30,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           ZIP=$(ls dist/*.zip)
+          VERSION=${ZIP#dist/FlowerPassword-}
+          VERSION=${VERSION%.zip}
+          if [ "v$VERSION" != "$GITHUB_REF_NAME" ]; then
+            echo "Tag $GITHUB_REF_NAME does not match app version $VERSION" >&2
+            exit 1
+          fi
           {
             echo "Requires macOS 14 or later. Universal binary (Apple Silicon and Intel)."
             echo
@@ -42,3 +48,31 @@ jobs:
             echo '```'
           } > notes.md
           gh release create "$GITHUB_REF_NAME" "$ZIP" --title "$GITHUB_REF_NAME" --notes-file notes.md
+
+      - name: Check out Homebrew tap
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: actions/checkout@v7
+        with:
+          repository: xlsdg/homebrew-tap
+          ssh-key: ${{ secrets.TAP_DEPLOY_KEY }}
+          path: tap
+
+      - name: Update Homebrew cask
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          ZIP=$(ls dist/*.zip)
+          VERSION=$(basename "$ZIP" .zip)
+          VERSION=${VERSION#FlowerPassword-}
+          SHA256=$(shasum -a 256 "$ZIP" | awk '{print $1}')
+          sed -i '' \
+            -e "s/^  version \".*\"$/  version \"$VERSION\"/" \
+            -e "s/^  sha256 \".*\"$/  sha256 \"$SHA256\"/" \
+            tap/Casks/flower-password.rb
+          grep -q "version \"$VERSION\"" tap/Casks/flower-password.rb
+          grep -q "sha256 \"$SHA256\"" tap/Casks/flower-password.rb
+          cd tap
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Casks/flower-password.rb
+          git diff --cached --quiet || git commit -m "chore: bump flower-password to $VERSION"
+          git push
