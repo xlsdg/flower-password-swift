@@ -28,4 +28,15 @@ final class ClipboardService {
         pendingClear = work
         DispatchQueue.main.asyncAfter(deadline: .now() + Self.clearDelay, execute: work)
     }
+
+    /// Immediately runs the pending clear, if any. The scheduled work item
+    /// dies with the process, so termination paths (quit, the in-place
+    /// update relaunch) call this to keep the 10-second promise.
+    func clearIfOwned() {
+        pendingClear?.cancel()
+        pendingClear = nil
+        if NSPasteboard.general.changeCount == ownedChangeCount {
+            NSPasteboard.general.clearContents()
+        }
+    }
 }
