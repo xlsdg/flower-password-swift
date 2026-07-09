@@ -1,0 +1,254 @@
+[
+  {
+    "password": "password",
+    "key": "key",
+    "length": 2,
+    "expected": "K3"
+  },
+  {
+    "password": "password",
+    "key": "key",
+    "length": 3,
+    "expected": "K3A"
+  },
+  {
+    "password": "password",
+    "key": "key",
+    "length": 4,
+    "expected": "K3A2"
+  },
+  {
+    "password": "password",
+    "key": "key",
+    "length": 5,
+    "expected": "K3A2a"
+  },
+  {
+    "password": "password",
+    "key": "key",
+    "length": 6,
+    "expected": "K3A2a6"
+  },
+  {
+    "password": "password",
+    "key": "key",
+    "length": 7,
+    "expected": "K3A2a66"
+  },
+  {
+    "password": "password",
+    "key": "key",
+    "length": 8,
+    "expected": "K3A2a66B"
+  },
+  {
+    "password": "password",
+    "key": "key",
+    "length": 9,
+    "expected": "K3A2a66Bf"
+  },
+  {
+    "password": "password",
+    "key": "key",
+    "length": 10,
+    "expected": "K3A2a66Bf8"
+  },
+  {
+    "password": "password",
+    "key": "key",
+    "length": 11,
+    "expected": "K3A2a66Bf88"
+  },
+  {
+    "password": "password",
+    "key": "key",
+    "length": 12,
+    "expected": "K3A2a66Bf88b"
+  },
+  {
+    "password": "password",
+    "key": "key",
+    "length": 13,
+    "expected": "K3A2a66Bf88b6"
+  },
+  {
+    "password": "password",
+    "key": "key",
+    "length": 14,
+    "expected": "K3A2a66Bf88b62"
+  },
+  {
+    "password": "password",
+    "key": "key",
+    "length": 15,
+    "expected": "K3A2a66Bf88b628"
+  },
+  {
+    "password": "password",
+    "key": "key",
+    "length": 16,
+    "expected": "K3A2a66Bf88b628c"
+  },
+  {
+    "password": "password",
+    "key": "key",
+    "length": 17,
+    "expected": "K3A2a66Bf88b628c2"
+  },
+  {
+    "password": "password",
+    "key": "key",
+    "length": 18,
+    "expected": "K3A2a66Bf88b628c2C"
+  },
+  {
+    "password": "password",
+    "key": "key",
+    "length": 19,
+    "expected": "K3A2a66Bf88b628c2Cd"
+  },
+  {
+    "password": "password",
+    "key": "key",
+    "length": 20,
+    "expected": "K3A2a66Bf88b628c2Cd7"
+  },
+  {
+    "password": "password",
+    "key": "key",
+    "length": 21,
+    "expected": "K3A2a66Bf88b628c2Cd7c"
+  },
+  {
+    "password": "password",
+    "key": "key",
+    "length": 22,
+    "expected": "K3A2a66Bf88b628c2Cd7cD"
+  },
+  {
+    "password": "password",
+    "key": "key",
+    "length": 23,
+    "expected": "K3A2a66Bf88b628c2Cd7cDA"
+  },
+  {
+    "password": "password",
+    "key": "key",
+    "length": 24,
+    "expected": "K3A2a66Bf88b628c2Cd7cDA9"
+  },
+  {
+    "password": "password",
+    "key": "key",
+    "length": 25,
+    "expected": "K3A2a66Bf88b628c2Cd7cDA99"
+  },
+  {
+    "password": "password",
+    "key": "key",
+    "length": 26,
+    "expected": "K3A2a66Bf88b628c2Cd7cDA995"
+  },
+  {
+    "password": "password",
+    "key": "key",
+    "length": 27,
+    "expected": "K3A2a66Bf88b628c2Cd7cDA9958"
+  },
+  {
+    "password": "password",
+    "key": "key",
+    "length": 28,
+    "expected": "K3A2a66Bf88b628c2Cd7cDA9958f"
+  },
+  {
+    "password": "password",
+    "key": "key",
+    "length": 29,
+    "expected": "K3A2a66Bf88b628c2Cd7cDA9958f6"
+  },
+  {
+    "password": "password",
+    "key": "key",
+    "length": 30,
+    "expected": "K3A2a66Bf88b628c2Cd7cDA9958f6b"
+  },
+  {
+    "password": "password",
+    "key": "key",
+    "length": 31,
+    "expected": "K3A2a66Bf88b628c2Cd7cDA9958f6b2"
+  },
+  {
+    "password": "password",
+    "key": "key",
+    "length": 32,
+    "expected": "K3A2a66Bf88b628c2Cd7cDA9958f6b26"
+  },
+  {
+    "password": "123456",
+    "key": "taobao",
+    "length": 16,
+    "expected": "KfdDf77F7D64e5c0"
+  },
+  {
+    "password": "pass🌸word",
+    "key": "key🔑",
+    "length": 16,
+    "expected": "K0742430191b3C72"
+  },
+  {
+    "password": "🌸🌸🌸",
+    "key": "🔑",
+    "length": 2,
+    "expected": "A4"
+  },
+  {
+    "password": "p@$$w0rd!",
+    "key": "k&y*()",
+    "length": 16,
+    "expected": "K6332bf7069Dd71F"
+  },
+  {
+    "password": "!@#$%^&*()_+",
+    "key": "<>?:\"{}|",
+    "length": 16,
+    "expected": "K450372e683Ad03d"
+  },
+  {
+    "password": "  leading spaces",
+    "key": "trailing  ",
+    "length": 32,
+    "expected": "KC7A499eaa5133f869Ab5AEfd6ac065C"
+  },
+  {
+    "password": "mypassword",
+    "key": "pre-github.com-suf",
+    "length": 16,
+    "expected": "DdAb91AD17252A2e"
+  },
+  {
+    "password": "UPPERCASE",
+    "key": "MiXeD",
+    "length": 16,
+    "expected": "K0dC273731fE6D25"
+  },
+  {
+    "password": "a",
+    "key": "b",
+    "length": 2,
+    "expected": "D9"
+  },
+  {
+    "password": "a",
+    "key": "b",
+    "length": 32,
+    "expected": "D9E1462b62f10B780C9dBA473be3B6be"
+  },
+  {
+    "password": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "key": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "length": 32,
+    "expected": "e64f4b1f49A0Bd3fb0a119b2523bB774"
+  }
+]
