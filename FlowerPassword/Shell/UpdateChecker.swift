@@ -1,7 +1,5 @@
 import AppKit
 
-import FlowerPasswordCore
-
 /// Manual update check against the GitHub releases API: compare the latest
 /// tag against the bundle version, offer to open the release page, and
 /// report errors verbatim.
@@ -29,7 +27,7 @@ final class UpdateChecker {
                 let latest =
                     release.tagName.hasPrefix("v")
                     ? String(release.tagName.dropFirst()) : release.tagName
-                if TextUtilities.compareVersions(latest, current) > 0 {
+                if latest.compare(current, options: .numeric) == .orderedDescending {
                     if Dialogs.updateAvailable(l10n, current: current, latest: latest),
                         let url = URL(string: release.htmlURL)
                     {

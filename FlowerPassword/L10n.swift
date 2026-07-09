@@ -4,7 +4,6 @@
 struct L10n: Sendable {
     // App & form
     let appTitle: String
-    let appName: String
     let close: String
     let passwordPlaceholder: String
     let keyPlaceholder: String
@@ -39,17 +38,12 @@ struct L10n: Sendable {
     let quitMessage: String
     let quitConfirm: String
     let quitCancel: String
-    let shortcutRegisterFailedTitle: String
     let shortcutRegisterFailedMessage: @Sendable (_ shortcut: String) -> String
-    let autoLaunchFailedTitle: String
     let autoLaunchFailedMessage: String
-    let updateTitle: String
     let updateVersionMessage: @Sendable (_ version: String) -> String
-    let updateAvailableTitle: String
     let updateAvailableMessage: @Sendable (_ current: String, _ latest: String) -> String
     let updateAvailableDetail: String
     let updateNoUpdateMessage: String
-    let updateErrorTitle: String
     let updateErrorMessage: String
     let ok: String
     let cancel: String
@@ -81,7 +75,6 @@ struct L10n: Sendable {
 
     static let zhCN = L10n(
         appTitle: "Flower Password",
-        appName: "花密",
         close: "关闭",
         passwordPlaceholder: "记忆密码",
         keyPlaceholder: "区分代号",
@@ -110,17 +103,12 @@ struct L10n: Sendable {
         quitMessage: "确定退出?",
         quitConfirm: "确定",
         quitCancel: "取消",
-        shortcutRegisterFailedTitle: "快捷键注册失败",
         shortcutRegisterFailedMessage: { "无法注册全局快捷键(\($0))。该快捷键可能已被其他应用占用。" },
-        autoLaunchFailedTitle: "开机自启设置失败",
         autoLaunchFailedMessage: "无法配置开机自启功能,请检查系统权限设置。",
-        updateTitle: "检查更新",
         updateVersionMessage: { "当前版本:\($0)" },
-        updateAvailableTitle: "发现新版本",
         updateAvailableMessage: { "发现新版本!\n\n当前版本:\($0)\n最新版本:\($1)" },
         updateAvailableDetail: "点击确定将打开浏览器,跳转到下载页面。",
         updateNoUpdateMessage: "您正在使用最新版本。",
-        updateErrorTitle: "更新错误",
         updateErrorMessage: "检查更新失败。",
         ok: "确定",
         cancel: "取消"
@@ -128,7 +116,6 @@ struct L10n: Sendable {
 
     static let zhTW = L10n(
         appTitle: "Flower Password",
-        appName: "花密",
         close: "關閉",
         passwordPlaceholder: "記憶密碼",
         keyPlaceholder: "區分代號",
@@ -157,17 +144,12 @@ struct L10n: Sendable {
         quitMessage: "確定退出?",
         quitConfirm: "確定",
         quitCancel: "取消",
-        shortcutRegisterFailedTitle: "快速鍵註冊失敗",
         shortcutRegisterFailedMessage: { "無法註冊全域快速鍵(\($0))。該快速鍵可能已被其他應用程式佔用。" },
-        autoLaunchFailedTitle: "開機自啟設定失敗",
         autoLaunchFailedMessage: "無法配置開機自啟功能,請檢查系統權限設定。",
-        updateTitle: "檢查更新",
         updateVersionMessage: { "目前版本:\($0)" },
-        updateAvailableTitle: "發現新版本",
         updateAvailableMessage: { "發現新版本!\n\n目前版本:\($0)\n最新版本:\($1)" },
         updateAvailableDetail: "點擊確定將開啟瀏覽器,跳轉至下載頁面。",
         updateNoUpdateMessage: "您正在使用最新版本。",
-        updateErrorTitle: "更新錯誤",
         updateErrorMessage: "檢查更新失敗。",
         ok: "確定",
         cancel: "取消"
@@ -175,7 +157,6 @@ struct L10n: Sendable {
 
     static let enUS = L10n(
         appTitle: "Flower Password",
-        appName: "FlowerPassword",
         close: "Close",
         passwordPlaceholder: "Memory Password",
         keyPlaceholder: "Distinction Code",
@@ -204,19 +185,14 @@ struct L10n: Sendable {
         quitMessage: "Are you sure you want to quit?",
         quitConfirm: "Quit",
         quitCancel: "Cancel",
-        shortcutRegisterFailedTitle: "Failed to register global shortcut",
         shortcutRegisterFailedMessage: {
             "Failed to register global shortcut (\($0)). The shortcut may be already in use by another application."
         },
-        autoLaunchFailedTitle: "Failed to set auto-launch",
         autoLaunchFailedMessage: "Failed to configure launch at login. Please check system permissions.",
-        updateTitle: "Check for Updates",
         updateVersionMessage: { "Current version: \($0)" },
-        updateAvailableTitle: "Update Available",
         updateAvailableMessage: { "A new version is available!\n\nCurrent: \($0)\nLatest: \($1)" },
         updateAvailableDetail: "Click OK to open the download page in your browser.",
         updateNoUpdateMessage: "You are using the latest version.",
-        updateErrorTitle: "Update Error",
         updateErrorMessage: "Failed to check for updates.",
         ok: "OK",
         cancel: "Cancel"

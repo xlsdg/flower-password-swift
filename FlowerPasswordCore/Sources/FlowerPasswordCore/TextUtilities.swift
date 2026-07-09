@@ -15,28 +15,4 @@ public enum TextUtilities {
         let middle = String(repeating: "•", count: password.count - 4)
         return "\(start)\(middle)\(end)"
     }
-
-    /// Compares two dotted version strings numerically, ignoring a leading
-    /// "v" and treating missing components as zero ("1.0.10" > "1.0.9",
-    /// "1.2" == "1.2.0").
-    public static func compareVersions(_ lhs: String, _ rhs: String) -> Int {
-        func parts(_ version: String) -> [Int] {
-            var trimmed = version
-            if trimmed.hasPrefix("v") {
-                trimmed.removeFirst()
-            }
-            return trimmed.components(separatedBy: ".").map { Int($0) ?? 0 }
-        }
-
-        let left = parts(lhs)
-        let right = parts(rhs)
-        for index in 0..<max(left.count, right.count) {
-            let l = index < left.count ? left[index] : 0
-            let r = index < right.count ? right[index] : 0
-            if l != r {
-                return l > r ? 1 : -1
-            }
-        }
-        return 0
-    }
 }

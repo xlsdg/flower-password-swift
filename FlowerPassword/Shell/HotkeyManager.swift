@@ -11,32 +11,21 @@ enum ShortcutOption: String, CaseIterable {
     case commandOptionF = "cmd+opt+f"
     case commandShiftF = "cmd+shift+f"
 
-    var keyCode: UInt32 {
+    /// (virtual key code, Carbon modifiers, menu display form like "⌘⌥S").
+    private var spec: (key: Int, modifiers: Int, name: String) {
         switch self {
-        case .commandOptionS, .commandShiftS: UInt32(kVK_ANSI_S)
-        case .commandOptionP, .commandShiftP: UInt32(kVK_ANSI_P)
-        case .commandOptionF, .commandShiftF: UInt32(kVK_ANSI_F)
+        case .commandOptionS: (kVK_ANSI_S, cmdKey | optionKey, "⌘⌥S")
+        case .commandShiftS: (kVK_ANSI_S, cmdKey | shiftKey, "⌘⇧S")
+        case .commandOptionP: (kVK_ANSI_P, cmdKey | optionKey, "⌘⌥P")
+        case .commandShiftP: (kVK_ANSI_P, cmdKey | shiftKey, "⌘⇧P")
+        case .commandOptionF: (kVK_ANSI_F, cmdKey | optionKey, "⌘⌥F")
+        case .commandShiftF: (kVK_ANSI_F, cmdKey | shiftKey, "⌘⇧F")
         }
     }
 
-    var carbonModifiers: UInt32 {
-        switch self {
-        case .commandOptionS, .commandOptionP, .commandOptionF: UInt32(cmdKey | optionKey)
-        case .commandShiftS, .commandShiftP, .commandShiftF: UInt32(cmdKey | shiftKey)
-        }
-    }
-
-    /// Display form for menus, e.g. "⌘⌥S".
-    var displayName: String {
-        switch self {
-        case .commandOptionS: "⌘⌥S"
-        case .commandShiftS: "⌘⇧S"
-        case .commandOptionP: "⌘⌥P"
-        case .commandShiftP: "⌘⇧P"
-        case .commandOptionF: "⌘⌥F"
-        case .commandShiftF: "⌘⇧F"
-        }
-    }
+    var keyCode: UInt32 { UInt32(spec.key) }
+    var carbonModifiers: UInt32 { UInt32(spec.modifiers) }
+    var displayName: String { spec.name }
 }
 
 /// Global hotkey via Carbon RegisterEventHotKey — unlike CGEventTap or
@@ -48,13 +37,7 @@ final class HotkeyManager {
     private var hotKeyRef: EventHotKeyRef?
     private var eventHandlerRef: EventHandlerRef?
 
-    private static let signature: OSType = {
-        var value: OSType = 0
-        for scalar in "FPWD".unicodeScalars {
-            value = (value << 8) + OSType(scalar.value)
-        }
-        return value
-    }()
+    private static let signature: OSType = 0x46505744  // "FPWD"
 
     deinit {
         if let hotKeyRef {
