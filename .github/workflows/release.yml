@@ -36,6 +36,10 @@ jobs:
             echo "Tag $GITHUB_REF_NAME does not match app version $VERSION" >&2
             exit 1
           fi
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            echo "Release $GITHUB_REF_NAME already exists; skipping creation"
+            exit 0
+          fi
           {
             echo "Requires macOS 14 or later. Universal binary (Apple Silicon and Intel)."
             echo
@@ -59,17 +63,22 @@ jobs:
 
       - name: Update Homebrew cask
         if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          ZIP=$(ls dist/*.zip)
+          set -o pipefail
+          gh release download "$GITHUB_REF_NAME" --pattern '*.zip' --dir asset
+          ZIP=$(ls asset/*.zip)
           VERSION=$(basename "$ZIP" .zip)
           VERSION=${VERSION#FlowerPassword-}
           SHA256=$(shasum -a 256 "$ZIP" | awk '{print $1}')
+          CASK=tap/Casks/flower-password.rb
           sed -i '' \
             -e "s/^  version \".*\"$/  version \"$VERSION\"/" \
             -e "s/^  sha256 \".*\"$/  sha256 \"$SHA256\"/" \
-            tap/Casks/flower-password.rb
-          grep -q "version \"$VERSION\"" tap/Casks/flower-password.rb
-          grep -q "sha256 \"$SHA256\"" tap/Casks/flower-password.rb
+            "$CASK"
+          grep -q "version \"$VERSION\"" "$CASK"
+          grep -q "sha256 \"$SHA256\"" "$CASK"
           cd tap
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
