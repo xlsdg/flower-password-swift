@@ -16,6 +16,16 @@ Flower Password is a "nothing stored" approach to password management: remember 
 
 ## Install
 
+### Homebrew
+
+```bash
+brew install --cask xlsdg/tap/flower-password
+```
+
+Add `--no-quarantine` to skip the Gatekeeper warning described below.
+
+### Manual download
+
 Download the latest `FlowerPassword-x.y.z.zip` from [Releases](https://github.com/xlsdg/flower-password-swift/releases), unzip it, and drag `FlowerPassword.app` into your Applications folder.
 
 The app is not notarized yet, so macOS will warn that it cannot verify the developer on first launch. Allow it once:
