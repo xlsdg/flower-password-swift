@@ -26,6 +26,7 @@ struct L10n: Sendable {
     let menuAutoLaunch: String
     let menuCheckUpdate: String
     let menuGlobalShortcut: String
+    let menuAutoType: String
     let themeLight: String
     let themeDark: String
     let themeAuto: String
@@ -40,6 +41,8 @@ struct L10n: Sendable {
     let quitCancel: String
     let shortcutRegisterFailedMessage: @Sendable (_ shortcut: String) -> String
     let autoLaunchFailedMessage: String
+    let autoTypePermissionMessage: String
+    let autoTypePermissionDetail: String
     let updateVersionMessage: @Sendable (_ version: String) -> String
     let updateAvailableMessage: @Sendable (_ current: String, _ latest: String) -> String
     let updateAvailableDetail: String
@@ -98,6 +101,7 @@ struct L10n: Sendable {
         menuAutoLaunch: "开机自启",
         menuCheckUpdate: "检查更新",
         menuGlobalShortcut: "全局快捷键",
+        menuAutoType: "自动键入",
         themeLight: "浅色",
         themeDark: "深色",
         themeAuto: "自动",
@@ -110,6 +114,8 @@ struct L10n: Sendable {
         quitCancel: "取消",
         shortcutRegisterFailedMessage: { "无法注册全局快捷键(\($0))。该快捷键可能已被其他应用占用。" },
         autoLaunchFailedMessage: "无法配置开机自启功能,请检查系统权限设置。",
+        autoTypePermissionMessage: "需要辅助功能权限",
+        autoTypePermissionDetail: "请在「系统设置 → 隐私与安全性 → 辅助功能」中允许 FlowerPassword,然后重新开启自动键入。",
         updateVersionMessage: { "当前版本:\($0)" },
         updateAvailableMessage: { "发现新版本!\n\n当前版本:\($0)\n最新版本:\($1)" },
         updateAvailableDetail: "点击确定将打开浏览器,跳转到下载页面。",
@@ -144,6 +150,7 @@ struct L10n: Sendable {
         menuAutoLaunch: "開機自啟",
         menuCheckUpdate: "檢查更新",
         menuGlobalShortcut: "全域快速鍵",
+        menuAutoType: "自動鍵入",
         themeLight: "淺色",
         themeDark: "深色",
         themeAuto: "自動",
@@ -156,6 +163,8 @@ struct L10n: Sendable {
         quitCancel: "取消",
         shortcutRegisterFailedMessage: { "無法註冊全域快速鍵(\($0))。該快速鍵可能已被其他應用程式佔用。" },
         autoLaunchFailedMessage: "無法配置開機自啟功能,請檢查系統權限設定。",
+        autoTypePermissionMessage: "需要輔助功能權限",
+        autoTypePermissionDetail: "請在「系統設定 → 隱私權與安全性 → 輔助使用」中允許 FlowerPassword,然後重新開啟自動鍵入。",
         updateVersionMessage: { "目前版本:\($0)" },
         updateAvailableMessage: { "發現新版本!\n\n目前版本:\($0)\n最新版本:\($1)" },
         updateAvailableDetail: "點擊確定將開啟瀏覽器,跳轉至下載頁面。",
@@ -190,6 +199,7 @@ struct L10n: Sendable {
         menuAutoLaunch: "Launch at Login",
         menuCheckUpdate: "Check for Updates",
         menuGlobalShortcut: "Global Shortcut",
+        menuAutoType: "Auto-Type",
         themeLight: "Light",
         themeDark: "Dark",
         themeAuto: "Auto",
@@ -204,6 +214,9 @@ struct L10n: Sendable {
             "Failed to register global shortcut (\($0)). The shortcut may be already in use by another application."
         },
         autoLaunchFailedMessage: "Failed to configure launch at login. Please check system permissions.",
+        autoTypePermissionMessage: "Accessibility Permission Required",
+        autoTypePermissionDetail:
+            "Allow FlowerPassword in System Settings → Privacy & Security → Accessibility, then enable Auto-Type again.",
         updateVersionMessage: { "Current version: \($0)" },
         updateAvailableMessage: { "A new version is available!\n\nCurrent: \($0)\nLatest: \($1)" },
         updateAvailableDetail: "Click OK to open the download page in your browser.",

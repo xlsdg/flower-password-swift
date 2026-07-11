@@ -10,6 +10,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItemController: StatusItemController!
     private var hotkeyManager: HotkeyManager!
     private var updateChecker: UpdateChecker!
+    private var autoTypeService: AutoTypeService!
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         let state = AppState()
@@ -17,7 +18,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         state.applyAppearance()
 
         clipboard = ClipboardService()
-        panelController = PanelController(state: state, clipboard: clipboard)
+        autoTypeService = AutoTypeService()
+        panelController = PanelController(state: state, clipboard: clipboard, autoType: autoTypeService)
         hotkeyManager = HotkeyManager()
         updateChecker = UpdateChecker(state: state)
         statusItemController = StatusItemController(

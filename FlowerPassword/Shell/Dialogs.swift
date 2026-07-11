@@ -13,6 +13,14 @@ enum Dialogs {
         runAlert(style: .critical, message: l10n.autoLaunchFailedMessage, detail: detail)
     }
 
+    static func autoTypeNeedsPermission(_ l10n: L10n) {
+        runAlert(
+            style: .informational,
+            message: l10n.autoTypePermissionMessage,
+            detail: l10n.autoTypePermissionDetail
+        )
+    }
+
     /// Returns true when the user confirmed quitting.
     static func confirmQuit(_ l10n: L10n) -> Bool {
         ask(

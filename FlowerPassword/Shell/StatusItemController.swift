@@ -85,6 +85,10 @@ final class StatusItemController: NSObject {
             ActionMenuItem(title: l10n.menuAutoLaunch, checked: AutoLaunch.isEnabled) { [weak self] in
                 self?.toggleAutoLaunch()
             })
+        menu.addItem(
+            ActionMenuItem(title: l10n.menuAutoType, checked: state.autoType) { [weak self] in
+                self?.toggleAutoType()
+            })
         menu.addItem(submenuItem(title: l10n.menuGlobalShortcut, items: shortcutItems()))
         menu.addItem(
             ActionMenuItem(title: l10n.menuCheckUpdate) { [weak self] in
@@ -157,6 +161,20 @@ final class StatusItemController: NSObject {
                 detail: error.localizedDescription
             )
         }
+    }
+
+    /// Requests Accessibility permission (with the system prompt) before
+    /// enabling; the setting is left off if permission isn't granted.
+    private func toggleAutoType() {
+        guard !state.autoType else {
+            state.autoType = false
+            return
+        }
+        guard AutoTypeService.isTrusted(prompt: true) else {
+            Dialogs.autoTypeNeedsPermission(L10n.strings(for: state.effectiveLanguage))
+            return
+        }
+        state.autoType = true
     }
 
     /// The new choice is registered before it is persisted; on failure the

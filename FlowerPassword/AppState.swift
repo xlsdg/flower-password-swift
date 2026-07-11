@@ -60,6 +60,7 @@ final class AppState {
         static let theme = "theme"
         static let language = "language"
         static let globalShortcut = "globalShortcut"
+        static let autoType = "autoType"
     }
 
     /// The memory password is deliberately never persisted anywhere.
@@ -93,6 +94,13 @@ final class AppState {
         didSet { defaults.set(shortcut.rawValue, forKey: Keys.globalShortcut) }
     }
 
+    /// When enabled, the generated password is typed directly into the
+    /// field that had focus before the panel opened, instead of being
+    /// copied to the clipboard.
+    var autoType: Bool {
+        didSet { defaults.set(autoType, forKey: Keys.autoType) }
+    }
+
     /// Bumped on every panel show; the form moves keyboard focus in response.
     private(set) var focusField: FocusField?
     private(set) var focusToken = 0
@@ -108,6 +116,7 @@ final class AppState {
         theme = defaults.string(forKey: Keys.theme).flatMap(ThemeMode.init) ?? .auto
         language = defaults.string(forKey: Keys.language).flatMap(LanguageMode.init) ?? .auto
         shortcut = defaults.string(forKey: Keys.globalShortcut).flatMap(ShortcutOption.init) ?? .commandOptionS
+        autoType = defaults.bool(forKey: Keys.autoType)
     }
 
     var effectiveLanguage: ResolvedLanguage {

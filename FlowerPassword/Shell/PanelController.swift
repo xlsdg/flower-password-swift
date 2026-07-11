@@ -11,6 +11,7 @@ final class PanelController: NSObject {
     private let panel: FloatingPanel
     private let state: AppState
     private let clipboard: ClipboardService
+    private let autoType: AutoTypeService
 
     /// Set every time the panel hides. The status item uses it to tell
     /// "hidden by this very click's focus loss" apart from a fresh open.
@@ -18,17 +19,23 @@ final class PanelController: NSObject {
 
     var isVisible: Bool { panel.isVisible }
 
-    init(state: AppState, clipboard: ClipboardService) {
+    init(state: AppState, clipboard: ClipboardService, autoType: AutoTypeService) {
         self.state = state
         self.clipboard = clipboard
+        self.autoType = autoType
         self.panel = FloatingPanel()
         super.init()
 
         let actions = PanelActions(
             copyAndHide: { [weak self] code in
                 guard let self else { return }
-                self.clipboard.copy(code)
-                self.hide()
+                if self.state.autoType, AutoTypeService.isTrusted(prompt: false) {
+                    self.hide()
+                    self.autoType.type(code)
+                } else {
+                    self.clipboard.copy(code)
+                    self.hide()
+                }
             },
             hide: { [weak self] in
                 self?.hide()
@@ -91,6 +98,7 @@ final class PanelController: NSObject {
     }
 
     private func show(topLeft: NSPoint, on screen: NSScreen?) {
+        autoType.capturePreviousApp()
         prefillKeyFromClipboard()
         var point = topLeft
         if let visible = screen?.visibleFrame {
