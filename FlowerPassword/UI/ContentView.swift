@@ -21,7 +21,7 @@ struct ContentView: View {
     @State private var isHoveringGenerate = false
 
     private var palette: Palette { .palette(for: colorScheme) }
-    private var l10n: L10n { .strings(for: state.effectiveLanguage) }
+    private var l10n: L10n { state.l10n }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {

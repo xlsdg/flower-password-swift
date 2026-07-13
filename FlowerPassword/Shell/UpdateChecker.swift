@@ -22,7 +22,7 @@ final class UpdateChecker {
         isChecking = true
         Task {
             defer { isChecking = false }
-            let l10n = L10n.strings(for: state.effectiveLanguage)
+            let l10n = state.l10n
             do {
                 let release = try await Self.fetchLatestRelease()
                 let current = Self.currentVersion

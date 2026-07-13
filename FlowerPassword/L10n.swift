@@ -1,3 +1,5 @@
+import FlowerPasswordCore
+
 /// Localized UI strings for the three supported languages. Kept as plain
 /// Swift data (instead of .lproj bundles) so the in-app language setting
 /// can switch the whole UI instantly at runtime, without relaunching.

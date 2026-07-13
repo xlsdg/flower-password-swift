@@ -43,6 +43,20 @@ public struct PublicSuffix: Sendable {
         exceptionRules = exceptions
     }
 
+    /// Returns the registrable domain's leftmost label for a piece of free
+    /// text (e.g. clipboard contents) holding an absolute URL, or nil
+    /// otherwise. Only strings with an explicit scheme count as URLs; a
+    /// bare "example.com" is rejected.
+    public func registrableLabel(fromURLText text: String) -> String? {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let components = URLComponents(string: trimmed),
+            components.scheme != nil,
+            let host = components.host, !host.isEmpty,
+            let label = secondLevelLabel(of: host), !label.isEmpty
+        else { return nil }
+        return label
+    }
+
     /// Returns the registrable domain's leftmost label, or nil when the host
     /// has no listed public suffix, is itself a public suffix, or is not a
     /// well-formed domain name.

@@ -17,30 +17,6 @@ enum LanguageMode: String, CaseIterable {
     case auto
 }
 
-/// A concrete UI language after resolving `.auto` against the system locale.
-enum ResolvedLanguage {
-    case zhCN
-    case zhTW
-    case enUS
-
-    /// Traditional-Chinese locales (the Hant script subtag, or the TW/HK/MO
-    /// regions) map to zh-TW, any other Chinese to zh-CN, everything else
-    /// to en-US.
-    static func detect(from identifier: String?) -> ResolvedLanguage {
-        guard let identifier else { return .enUS }
-        let locale = identifier.lowercased().replacingOccurrences(of: "_", with: "-")
-        if locale.hasPrefix("zh") {
-            if locale.contains("hant") || locale.hasPrefix("zh-tw") || locale.hasPrefix("zh-hk")
-                || locale.hasPrefix("zh-mo")
-            {
-                return .zhTW
-            }
-            return .zhCN
-        }
-        return .enUS
-    }
-}
-
 /// All mutable app state, observed by the SwiftUI form and mutated by the
 /// AppKit shell (status item, panel, hotkey). Main-actor confined.
 @MainActor
@@ -127,6 +103,9 @@ final class AppState {
         case .auto: ResolvedLanguage.detect(from: Locale.preferredLanguages.first)
         }
     }
+
+    /// The UI strings for the effective language.
+    var l10n: L10n { .strings(for: effectiveLanguage) }
 
     /// Empty while either input is empty, otherwise the flower password for
     /// (password, prefix + key + suffix, length). Cheap enough to recompute

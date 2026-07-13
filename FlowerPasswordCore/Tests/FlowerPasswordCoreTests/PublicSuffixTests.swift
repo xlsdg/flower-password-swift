@@ -49,6 +49,23 @@ struct PublicSuffixTests {
         #expect(psl.secondLevelLabel(of: "foo.invalidtldxyz") == nil)
     }
 
+    @Test("extracts the label from free text holding an absolute URL")
+    func urlText() {
+        #expect(psl.registrableLabel(fromURLText: "https://www.github.com/xlsdg") == "github")
+        #expect(psl.registrableLabel(fromURLText: "  https://GitHub.COM/path?q=1 \n") == "github")
+        #expect(psl.registrableLabel(fromURLText: "http://gist.github.io") == "gist")
+    }
+
+    @Test("rejects text that is not an absolute URL with a listed suffix")
+    func urlTextRejections() {
+        // No explicit scheme: a bare domain is not treated as a URL.
+        #expect(psl.registrableLabel(fromURLText: "example.com") == nil)
+        #expect(psl.registrableLabel(fromURLText: "") == nil)
+        #expect(psl.registrableLabel(fromURLText: "hello world") == nil)
+        #expect(psl.registrableLabel(fromURLText: "https://localhost/admin") == nil)
+        #expect(psl.registrableLabel(fromURLText: "https://192.168.1.1/") == nil)
+    }
+
     @Test("parses rules with comments and whitespace")
     func parsing() {
         let list = """

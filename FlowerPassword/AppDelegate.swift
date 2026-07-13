@@ -33,10 +33,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self?.panelController.showAtCursor()
         }
         if !hotkeyManager.register(state.shortcut) {
-            Dialogs.shortcutRegistrationFailed(
-                L10n.strings(for: state.effectiveLanguage),
-                shortcut: state.shortcut.displayName
-            )
+            Dialogs.shortcutRegistrationFailed(state.l10n, shortcut: state.shortcut.displayName)
         }
 
         // The Public Suffix List (used to prefill the distinction code from

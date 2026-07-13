@@ -26,7 +26,7 @@ final class StatusItemController: NSObject {
         let icon = NSImage(named: "Mono")
         icon?.isTemplate = true
         button.image = icon
-        button.toolTip = L10n.strings(for: state.effectiveLanguage).trayTooltip
+        button.toolTip = state.l10n.trayTooltip
         button.target = self
         button.action = #selector(statusItemClicked)
         button.sendAction(on: [.leftMouseUp, .rightMouseUp])
@@ -68,7 +68,7 @@ final class StatusItemController: NSObject {
     /// Show / Theme / Language / auto-launch / shortcut / update / Quit,
     /// with the pickers as native checkmarked submenus.
     private func buildMenu() -> NSMenu {
-        let l10n = L10n.strings(for: state.effectiveLanguage)
+        let l10n = state.l10n
         let menu = NSMenu()
 
         menu.addItem(
@@ -149,7 +149,7 @@ final class StatusItemController: NSObject {
     }
 
     private func refreshTooltip() {
-        statusItem.button?.toolTip = L10n.strings(for: state.effectiveLanguage).trayTooltip
+        statusItem.button?.toolTip = state.l10n.trayTooltip
     }
 
     private func toggleAutoLaunch() {
@@ -157,7 +157,7 @@ final class StatusItemController: NSObject {
             try AutoLaunch.set(!AutoLaunch.isEnabled)
         } catch {
             Dialogs.autoLaunchFailed(
-                L10n.strings(for: state.effectiveLanguage),
+                state.l10n,
                 detail: error.localizedDescription
             )
         }
@@ -171,7 +171,7 @@ final class StatusItemController: NSObject {
             return
         }
         guard AutoTypeService.isTrusted(prompt: true) else {
-            Dialogs.autoTypeNeedsPermission(L10n.strings(for: state.effectiveLanguage))
+            Dialogs.autoTypeNeedsPermission(state.l10n)
             return
         }
         state.autoType = true
@@ -186,7 +186,7 @@ final class StatusItemController: NSObject {
         } else {
             hotkeys.register(state.shortcut)
             Dialogs.shortcutRegistrationFailed(
-                L10n.strings(for: state.effectiveLanguage),
+                state.l10n,
                 shortcut: option.displayName
             )
         }
@@ -194,7 +194,7 @@ final class StatusItemController: NSObject {
 
     private func confirmQuit() {
         panels.hide()
-        if Dialogs.confirmQuit(L10n.strings(for: state.effectiveLanguage)) {
+        if Dialogs.confirmQuit(state.l10n) {
             NSApp.terminate(nil)
         }
     }

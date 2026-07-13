@@ -123,15 +123,10 @@ final class PanelController: NSObject {
 
     /// On every show, if the clipboard holds an absolute URL whose host has
     /// a recognized public suffix, the registrable label ("google" from
-    /// www.google.co.uk) replaces the distinction code. Only strings with an
-    /// explicit scheme count as URLs; a bare "example.com" is ignored.
+    /// www.google.co.uk) replaces the distinction code.
     private func prefillKeyFromClipboard() {
-        guard let text = NSPasteboard.general.string(forType: .string), !text.isEmpty else { return }
-        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard let components = URLComponents(string: trimmed),
-            components.scheme != nil,
-            let host = components.host?.lowercased(), !host.isEmpty,
-            let label = PublicSuffix.shared.secondLevelLabel(of: host), !label.isEmpty
+        guard let text = NSPasteboard.general.string(forType: .string),
+            let label = PublicSuffix.shared.registrableLabel(fromURLText: text)
         else { return }
         state.key = label
     }
