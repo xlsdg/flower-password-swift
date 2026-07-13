@@ -23,6 +23,8 @@ xcodebuild -project FlowerPassword.xcodeproj -scheme FlowerPassword -configurati
 ./scripts/release.sh
 ```
 
+Verification: run `swift test --package-path FlowerPasswordCore` before committing anything that touches `FlowerPasswordCore/`.
+
 ## Architecture
 
 Two layers:
