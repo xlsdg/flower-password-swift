@@ -85,6 +85,7 @@ final class StatusItemController: NSObject {
             ActionMenuItem(title: l10n.menuAutoLaunch, checked: AutoLaunch.isEnabled) { [weak self] in
                 self?.toggleAutoLaunch()
             })
+        resyncAutoTypeState()
         menu.addItem(
             ActionMenuItem(title: l10n.menuAutoType, checked: state.autoType) { [weak self] in
                 self?.toggleAutoType()
@@ -102,6 +103,16 @@ final class StatusItemController: NSObject {
             })
 
         return menu
+    }
+
+    /// Accessibility trust can be revoked behind our back — e.g. a
+    /// self-update replaces the app bundle with a differently-signed
+    /// binary and TCC drops the grant. Called before building the menu so
+    /// both the checkmark and the persisted flag `toggleAutoType()` reads
+    /// never claim "on" once the permission is actually gone.
+    private func resyncAutoTypeState() {
+        guard state.autoType, !AutoTypeService.isTrusted(prompt: false) else { return }
+        state.autoType = false
     }
 
     private func themeItems(_ l10n: L10n) -> [NSMenuItem] {
