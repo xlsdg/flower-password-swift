@@ -44,7 +44,8 @@ final class StatusItemController: NSObject {
     }
 
     private func handleLeftClick() {
-        panels.toggleBelowStatusItem(statusItem.button!)
+        guard let button = statusItem.button else { return }
+        panels.toggleBelowStatusItem(button)
     }
 
     private func handleRightClick() {
@@ -136,7 +137,8 @@ final class StatusItemController: NSObject {
     // MARK: - Actions
 
     private func showPanel() {
-        panels.toggleBelowStatusItem(statusItem.button!)
+        guard let button = statusItem.button else { return }
+        panels.showBelowStatusItem(button)
     }
 
     private func refreshTooltip() {
@@ -157,7 +159,7 @@ final class StatusItemController: NSObject {
     /// Requests Accessibility permission (with the system prompt) before
     /// enabling; the setting is left off if permission isn't granted.
     private func toggleAutoType() {
-        delivery.setAutoTypeEnabled(delivery.desiredMode == .clipboard)
+        delivery.toggleAutoType()
     }
 
     /// The new choice is registered before it is persisted; on failure the

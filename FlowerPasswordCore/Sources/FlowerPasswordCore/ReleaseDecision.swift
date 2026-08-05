@@ -22,6 +22,13 @@ public struct Release: Codable, Equatable, Sendable {
             self.browserDownloadUrl = browserDownloadUrl
         }
     }
+
+    /// The tag name with a leading "v" stripped, if present, so "v1.2.3" and
+    /// "1.2.3" both normalize to "1.2.3". The single place callers should
+    /// read the release's version — avoids re-deriving this in Shell.
+    public var normalizedVersion: String {
+        tagName.hasPrefix("v") ? String(tagName.dropFirst()) : tagName
+    }
 }
 
 /// The outcome of comparing the current version against a release: up to date,
@@ -42,11 +49,7 @@ public enum ReleaseDecision: Equatable, Sendable {
     ///   - release: A successfully-decoded release manifest from the API.
     ///     Network failures should be handled before calling this function.
     public static func decide(currentVersion: String, release: Release) -> ReleaseDecision {
-        // Strip the "v" prefix from the tag if present, so "v1.2.3" and
-        // "1.2.3" both compare as "1.2.3".
-        let latestVersion = release.tagName.hasPrefix("v")
-            ? String(release.tagName.dropFirst())
-            : release.tagName
+        let latestVersion = release.normalizedVersion
 
         // Numeric comparison handles multi-digit components correctly:
         // "1.2.10" > "1.2.9".

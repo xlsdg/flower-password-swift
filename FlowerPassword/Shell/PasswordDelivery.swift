@@ -60,6 +60,13 @@ final class PasswordDelivery {
         state.autoType = true
     }
 
+    /// Flips auto-type from its currently *displayed* state — off when the
+    /// checkmark reads off, including when trust was revoked behind the
+    /// user's back and the persisted flag hasn't caught up yet.
+    func toggleAutoType() {
+        setAutoTypeEnabled(desiredMode != .autoType)
+    }
+
     /// Captures the app that had focus before the panel opens, so auto-type
     /// can reactivate it and inject keystrokes into the right target.
     func capturePreviousApp() {

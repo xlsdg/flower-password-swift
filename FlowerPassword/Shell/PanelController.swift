@@ -64,6 +64,16 @@ final class PanelController: NSObject {
         )
     }
 
+    /// Horizontally centered under the status item, flush with the bottom
+    /// edge of the menu bar. Shows unconditionally, regardless of current
+    /// visibility or recent dismissal.
+    func showBelowStatusItem(_ button: NSStatusBarButton) {
+        guard let buttonWindow = button.window else { return }
+        let frame = buttonWindow.frame
+        let topLeft = NSPoint(x: frame.midX - PanelMetrics.width / 2, y: frame.minY)
+        show(topLeft: topLeft, on: buttonWindow.screen)
+    }
+
     /// Toggles the panel below the status item: hides if visible, shows if
     /// hidden. When the panel just hid because this click made it lose key
     /// status, the toggle is ignored (otherwise a single click would dismiss
@@ -76,10 +86,7 @@ final class PanelController: NSObject {
         // If the panel lost key status (and hid) because of this very click,
         // this is a dismiss, not an open request.
         guard Date().timeIntervalSince(lastHiddenAt) > 0.3 else { return }
-        guard let buttonWindow = button.window else { return }
-        let frame = buttonWindow.frame
-        let topLeft = NSPoint(x: frame.midX - PanelMetrics.width / 2, y: frame.minY)
-        show(topLeft: topLeft, on: buttonWindow.screen)
+        showBelowStatusItem(button)
     }
 
     /// Top-left corner at the mouse cursor, clamped into the work area of

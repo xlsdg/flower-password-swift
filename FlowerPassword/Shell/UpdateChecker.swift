@@ -35,9 +35,7 @@ final class UpdateChecker {
                     Dialogs.noUpdate(l10n, version: current)
 
                 case .installable(let archiveURL, let signatureURL):
-                    let latest = release.tagName.hasPrefix("v")
-                        ? String(release.tagName.dropFirst())
-                        : release.tagName
+                    let latest = release.normalizedVersion
                     guard Dialogs.updateAvailable(l10n, current: current, latest: latest) else {
                         return
                     }
@@ -55,9 +53,7 @@ final class UpdateChecker {
                     }
 
                 case .manualOnly(let pageURL):
-                    let latest = release.tagName.hasPrefix("v")
-                        ? String(release.tagName.dropFirst())
-                        : release.tagName
+                    let latest = release.normalizedVersion
                     if Dialogs.updateAvailableManual(l10n, current: current, latest: latest) {
                         NSWorkspace.shared.open(pageURL)
                     }
