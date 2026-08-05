@@ -5,28 +5,29 @@ import FlowerPasswordCore
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var state: AppState!
-    private var clipboard: ClipboardService!
+    private var delivery: PasswordDelivery!
     private var panelController: PanelController!
     private var statusItemController: StatusItemController!
     private var hotkeyManager: HotkeyManager!
     private var updateChecker: UpdateChecker!
-    private var autoTypeService: AutoTypeService!
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         let state = AppState()
         self.state = state
         state.applyAppearance()
 
-        clipboard = ClipboardService()
-        autoTypeService = AutoTypeService()
-        panelController = PanelController(state: state, clipboard: clipboard, autoType: autoTypeService)
+        let clipboard = ClipboardService()
+        let autoTypeService = AutoTypeService()
+        delivery = PasswordDelivery(state: state, autoType: autoTypeService, clipboard: clipboard)
+        panelController = PanelController(state: state, delivery: delivery)
         hotkeyManager = HotkeyManager()
         updateChecker = UpdateChecker(state: state)
         statusItemController = StatusItemController(
             state: state,
             panels: panelController,
             hotkeys: hotkeyManager,
-            updates: updateChecker
+            updates: updateChecker,
+            delivery: delivery
         )
 
         hotkeyManager.handler = { [weak self] in
@@ -48,6 +49,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationWillTerminate(_ notification: Notification) {
-        clipboard?.clearIfOwned()
+        delivery?.clearClipboardIfOwned()
     }
 }

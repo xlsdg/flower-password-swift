@@ -10,12 +10,14 @@ final class StatusItemController: NSObject {
     private let panels: PanelController
     private let hotkeys: HotkeyManager
     private let updates: UpdateChecker
+    private let delivery: PasswordDelivery
 
-    init(state: AppState, panels: PanelController, hotkeys: HotkeyManager, updates: UpdateChecker) {
+    init(state: AppState, panels: PanelController, hotkeys: HotkeyManager, updates: UpdateChecker, delivery: PasswordDelivery) {
         self.state = state
         self.panels = panels
         self.hotkeys = hotkeys
         self.updates = updates
+        self.delivery = delivery
         self.statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         super.init()
         configureButton()
@@ -85,9 +87,8 @@ final class StatusItemController: NSObject {
             ActionMenuItem(title: l10n.menuAutoLaunch, checked: AutoLaunch.isEnabled) { [weak self] in
                 self?.toggleAutoLaunch()
             })
-        resyncAutoTypeState()
         menu.addItem(
-            ActionMenuItem(title: l10n.menuAutoType, checked: state.autoType) { [weak self] in
+            ActionMenuItem(title: l10n.menuAutoType, checked: delivery.desiredMode == .autoType) { [weak self] in
                 self?.toggleAutoType()
             })
         menu.addItem(submenuItem(title: l10n.menuGlobalShortcut, items: shortcutItems()))
@@ -103,16 +104,6 @@ final class StatusItemController: NSObject {
             })
 
         return menu
-    }
-
-    /// Accessibility trust can be revoked behind our back — e.g. a
-    /// self-update replaces the app bundle with a differently-signed
-    /// binary and TCC drops the grant. Called before building the menu so
-    /// both the checkmark and the persisted flag `toggleAutoType()` reads
-    /// never claim "on" once the permission is actually gone.
-    private func resyncAutoTypeState() {
-        guard state.autoType, !AutoTypeService.isTrusted(prompt: false) else { return }
-        state.autoType = false
     }
 
     private func themeItems(_ l10n: L10n) -> [NSMenuItem] {
@@ -177,15 +168,7 @@ final class StatusItemController: NSObject {
     /// Requests Accessibility permission (with the system prompt) before
     /// enabling; the setting is left off if permission isn't granted.
     private func toggleAutoType() {
-        guard !state.autoType else {
-            state.autoType = false
-            return
-        }
-        guard AutoTypeService.isTrusted(prompt: true) else {
-            Dialogs.autoTypeNeedsPermission(state.l10n)
-            return
-        }
-        state.autoType = true
+        delivery.setAutoTypeEnabled(delivery.desiredMode == .clipboard)
     }
 
     /// The new choice is registered before it is persisted; on failure the
