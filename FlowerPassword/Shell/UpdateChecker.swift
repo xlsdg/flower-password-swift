@@ -1,5 +1,7 @@
 import AppKit
 
+import FlowerPasswordCore
+
 /// Manual update check against the GitHub releases API: compare the latest
 /// tag against the bundle version and, when the release carries a signed
 /// archive, download, verify, install, and relaunch in place. Releases
@@ -26,22 +28,24 @@ final class UpdateChecker {
             do {
                 let release = try await Self.fetchLatestRelease()
                 let current = Self.currentVersion
-                let latest =
-                    release.tagName.hasPrefix("v")
-                    ? String(release.tagName.dropFirst()) : release.tagName
-                guard latest.compare(current, options: .numeric) == .orderedDescending else {
+                let decision = ReleaseDecision.decide(currentVersion: current, release: release)
+
+                switch decision {
+                case .upToDate:
                     Dialogs.noUpdate(l10n, version: current)
-                    return
-                }
-                if let update = Self.signedArchive(in: release, version: latest) {
+
+                case .installable(let archiveURL, let signatureURL):
+                    let latest = release.tagName.hasPrefix("v")
+                        ? String(release.tagName.dropFirst())
+                        : release.tagName
                     guard Dialogs.updateAvailable(l10n, current: current, latest: latest) else {
                         return
                     }
                     do {
                         // On success install() relaunches and never returns.
                         try await SelfUpdater.install(
-                            zipURL: update.archive,
-                            signatureURL: update.signature,
+                            zipURL: archiveURL,
+                            signatureURL: signatureURL,
                             expectedVersion: latest
                         )
                     } catch {
@@ -49,8 +53,14 @@ final class UpdateChecker {
                             Self.openReleasePage(release)
                         }
                     }
-                } else if Dialogs.updateAvailableManual(l10n, current: current, latest: latest) {
-                    Self.openReleasePage(release)
+
+                case .manualOnly(let pageURL):
+                    let latest = release.tagName.hasPrefix("v")
+                        ? String(release.tagName.dropFirst())
+                        : release.tagName
+                    if Dialogs.updateAvailableManual(l10n, current: current, latest: latest) {
+                        NSWorkspace.shared.open(pageURL)
+                    }
                 }
             } catch {
                 Dialogs.updateError(l10n, detail: error.localizedDescription)
@@ -64,34 +74,8 @@ final class UpdateChecker {
         }
     }
 
-    /// The release's zip asset paired with its Ed25519 signature asset, or
-    /// nil when the release cannot be auto-installed. The archive name is
-    /// the contract scripts/release.sh produces.
-    private static func signedArchive(in release: Release, version: String) -> (archive: URL, signature: URL)? {
-        let archiveName = "FlowerPassword-\(version).zip"
-        guard
-            let zip = release.assets.first(where: { $0.name == archiveName }),
-            let signature = release.assets.first(where: { $0.name == zip.name + ".sig" }),
-            let zipURL = URL(string: zip.browserDownloadUrl), zipURL.scheme == "https",
-            let signatureURL = URL(string: signature.browserDownloadUrl),
-            signatureURL.scheme == "https"
-        else { return nil }
-        return (zipURL, signatureURL)
-    }
-
     private static var currentVersion: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.0.0"
-    }
-
-    private struct Release: Decodable {
-        let tagName: String
-        let htmlUrl: String
-        let assets: [Asset]
-
-        struct Asset: Decodable {
-            let name: String
-            let browserDownloadUrl: String
-        }
     }
 
     private struct HTTPStatusError: LocalizedError {
