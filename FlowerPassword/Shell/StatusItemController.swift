@@ -44,20 +44,11 @@ final class StatusItemController: NSObject {
     }
 
     private func handleLeftClick() {
-        if panels.isVisible {
-            panels.hide()
-            return
-        }
-        // If the panel lost key status (and hid) because of this very click,
-        // this is a dismiss, not an open request.
-        guard Date().timeIntervalSince(panels.lastHiddenAt) > 0.3 else { return }
-        showPanel()
+        panels.toggleBelowStatusItem(statusItem.button!)
     }
 
     private func handleRightClick() {
-        if panels.isVisible {
-            panels.hide()
-        }
+        panels.hide()
         // Assign the menu just for this click so left-click keeps toggling
         // the panel instead of opening the menu.
         statusItem.menu = buildMenu()
@@ -145,9 +136,7 @@ final class StatusItemController: NSObject {
     // MARK: - Actions
 
     private func showPanel() {
-        if let button = statusItem.button {
-            panels.showBelowStatusItem(button)
-        }
+        panels.toggleBelowStatusItem(statusItem.button!)
     }
 
     private func refreshTooltip() {

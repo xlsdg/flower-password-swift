@@ -12,11 +12,9 @@ final class PanelController: NSObject {
     private let state: AppState
     private let delivery: PasswordDelivery
 
-    /// Set every time the panel hides. The status item uses it to tell
-    /// "hidden by this very click's focus loss" apart from a fresh open.
-    private(set) var lastHiddenAt = Date.distantPast
-
-    var isVisible: Bool { panel.isVisible }
+    /// Set every time the panel hides, used internally to distinguish
+    /// "just hid due to focus loss from this very click" from a fresh toggle.
+    private var lastHiddenAt = Date.distantPast
 
     init(state: AppState, delivery: PasswordDelivery) {
         self.state = state
@@ -66,9 +64,18 @@ final class PanelController: NSObject {
         )
     }
 
-    /// Horizontally centered under the status item, flush with the bottom
-    /// edge of the menu bar.
-    func showBelowStatusItem(_ button: NSStatusBarButton) {
+    /// Toggles the panel below the status item: hides if visible, shows if
+    /// hidden. When the panel just hid because this click made it lose key
+    /// status, the toggle is ignored (otherwise a single click would dismiss
+    /// and immediately re-show).
+    func toggleBelowStatusItem(_ button: NSStatusBarButton) {
+        if panel.isVisible {
+            hide()
+            return
+        }
+        // If the panel lost key status (and hid) because of this very click,
+        // this is a dismiss, not an open request.
+        guard Date().timeIntervalSince(lastHiddenAt) > 0.3 else { return }
         guard let buttonWindow = button.window else { return }
         let frame = buttonWindow.frame
         let topLeft = NSPoint(x: frame.midX - PanelMetrics.width / 2, y: frame.minY)
