@@ -28,6 +28,7 @@ final class UpdateChecker {
             do {
                 let release = try await Self.fetchLatestRelease()
                 let current = Self.currentVersion
+                let latest = release.normalizedVersion
                 let decision = ReleaseDecision.decide(currentVersion: current, release: release)
 
                 switch decision {
@@ -35,7 +36,6 @@ final class UpdateChecker {
                     Dialogs.noUpdate(l10n, version: current)
 
                 case .installable(let archiveURL, let signatureURL):
-                    let latest = release.normalizedVersion
                     guard Dialogs.updateAvailable(l10n, current: current, latest: latest) else {
                         return
                     }
@@ -47,13 +47,14 @@ final class UpdateChecker {
                             expectedVersion: latest
                         )
                     } catch {
-                        if Dialogs.updateInstallFailed(l10n, detail: error.localizedDescription) {
-                            Self.openReleasePage(release)
+                        if Dialogs.updateInstallFailed(l10n, detail: error.localizedDescription),
+                            let url = URL(string: release.htmlUrl)
+                        {
+                            NSWorkspace.shared.open(url)
                         }
                     }
 
                 case .manualOnly(let pageURL):
-                    let latest = release.normalizedVersion
                     if Dialogs.updateAvailableManual(l10n, current: current, latest: latest) {
                         NSWorkspace.shared.open(pageURL)
                     }
@@ -61,12 +62,6 @@ final class UpdateChecker {
             } catch {
                 Dialogs.updateError(l10n, detail: error.localizedDescription)
             }
-        }
-    }
-
-    private static func openReleasePage(_ release: Release) {
-        if let url = URL(string: release.htmlUrl) {
-            NSWorkspace.shared.open(url)
         }
     }
 

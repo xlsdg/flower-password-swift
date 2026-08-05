@@ -67,7 +67,8 @@ final class StatusItemController: NSObject {
 
         menu.addItem(
             ActionMenuItem(title: l10n.trayShow) { [weak self] in
-                self?.showPanel()
+                guard let self, let button = self.statusItem.button else { return }
+                self.panels.showBelowStatusItem(button)
             })
         menu.addItem(.separator())
 
@@ -80,8 +81,8 @@ final class StatusItemController: NSObject {
                 self?.toggleAutoLaunch()
             })
         menu.addItem(
-            ActionMenuItem(title: l10n.menuAutoType, checked: delivery.desiredMode == .autoType) { [weak self] in
-                self?.toggleAutoType()
+            ActionMenuItem(title: l10n.menuAutoType, checked: delivery.willAutoType) { [weak self] in
+                self?.delivery.toggleAutoType()
             })
         menu.addItem(submenuItem(title: l10n.menuGlobalShortcut, items: shortcutItems()))
         menu.addItem(
@@ -136,11 +137,6 @@ final class StatusItemController: NSObject {
 
     // MARK: - Actions
 
-    private func showPanel() {
-        guard let button = statusItem.button else { return }
-        panels.showBelowStatusItem(button)
-    }
-
     private func refreshTooltip() {
         statusItem.button?.toolTip = state.l10n.trayTooltip
     }
@@ -154,12 +150,6 @@ final class StatusItemController: NSObject {
                 detail: error.localizedDescription
             )
         }
-    }
-
-    /// Requests Accessibility permission (with the system prompt) before
-    /// enabling; the setting is left off if permission isn't granted.
-    private func toggleAutoType() {
-        delivery.toggleAutoType()
     }
 
     /// The new choice is registered before it is persisted; on failure the

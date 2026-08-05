@@ -2,7 +2,7 @@ import Foundation
 
 /// A release manifest decoded from the GitHub Releases API. Public so tests
 /// and the Shell layer can construct fixtures and pass decoded API responses.
-public struct Release: Codable, Equatable, Sendable {
+public struct Release: Decodable, Equatable, Sendable {
     public let tagName: String
     public let htmlUrl: String
     public let assets: [Asset]
@@ -13,7 +13,7 @@ public struct Release: Codable, Equatable, Sendable {
         self.assets = assets
     }
 
-    public struct Asset: Codable, Equatable, Sendable {
+    public struct Asset: Decodable, Equatable, Sendable {
         public let name: String
         public let browserDownloadUrl: String
 
@@ -57,32 +57,20 @@ public enum ReleaseDecision: Equatable, Sendable {
             return .upToDate
         }
 
+        let manual = ReleaseDecision.manualOnly(
+            pageURL: URL(string: release.htmlUrl) ?? URL(string: "https://github.com")!)
+
         // The archive name contract with scripts/release.sh: the zip is named
-        // "FlowerPassword-{version}.zip", and the signature is "{zip}.sig".
+        // "FlowerPassword-{version}.zip", the signature is "{zip}.sig", and
+        // only HTTPS URLs are safe for automatic installation.
         let expectedArchiveName = "FlowerPassword-\(latestVersion).zip"
         guard
             let zipAsset = release.assets.first(where: { $0.name == expectedArchiveName }),
-            let signatureAsset = release.assets.first(where: { $0.name == expectedArchiveName + ".sig" })
+            let signatureAsset = release.assets.first(where: { $0.name == expectedArchiveName + ".sig" }),
+            let zipURL = URL(string: zipAsset.browserDownloadUrl), zipURL.scheme == "https",
+            let signatureURL = URL(string: signatureAsset.browserDownloadUrl), signatureURL.scheme == "https"
         else {
-            // No matching pair found — fall back to manual download.
-            guard let pageURL = URL(string: release.htmlUrl) else {
-                return .manualOnly(pageURL: URL(string: "https://github.com")!)
-            }
-            return .manualOnly(pageURL: pageURL)
-        }
-
-        // Only HTTPS URLs are safe for automatic installation; anything else
-        // (including http or malformed URLs) falls back to manual.
-        guard
-            let zipURL = URL(string: zipAsset.browserDownloadUrl),
-            zipURL.scheme == "https",
-            let signatureURL = URL(string: signatureAsset.browserDownloadUrl),
-            signatureURL.scheme == "https"
-        else {
-            guard let pageURL = URL(string: release.htmlUrl) else {
-                return .manualOnly(pageURL: URL(string: "https://github.com")!)
-            }
-            return .manualOnly(pageURL: pageURL)
+            return manual
         }
 
         return .installable(archiveURL: zipURL, signatureURL: signatureURL)
