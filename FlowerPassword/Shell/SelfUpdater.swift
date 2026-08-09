@@ -53,13 +53,22 @@ enum SelfUpdater {
     /// Contains blocking process waits, so it must stay off the main actor.
     /// As a nonisolated async function it runs on the global executor today;
     /// revisit if the project ever adopts main-actor-by-default isolation.
-    static func install(zipURL: URL, signatureURL: URL, expectedVersion: String) async throws {
+    static func install(
+        zipURL: URL,
+        signatureURL: URL,
+        expectedVersion: String,
+        progressHandler: (@Sendable (Double) async -> Void)? = nil
+    ) async throws {
         let bundleURL = Bundle.main.bundleURL
         try preflight(bundleURL)
 
-        let archive = try await fetch(zipURL, limit: maxArchiveBytes)
-        let signature = try await fetch(signatureURL, limit: maxSignatureBytes)
+        await progressHandler?(0.05)
+        let archive = try await fetch(zipURL, limit: maxArchiveBytes, progressHandler: progressHandler)
+        await progressHandler?(0.80)
+        let signature = try await fetch(signatureURL, limit: maxSignatureBytes, progressHandler: nil)
+        await progressHandler?(0.85)
         try verify(archive: archive, signature: signature)
+        await progressHandler?(0.90)
 
         // itemReplacementDirectory keeps staging on the same volume as the
         // installed app, so the swap below is a pure rename.
@@ -69,10 +78,13 @@ enum SelfUpdater {
         defer { try? FileManager.default.removeItem(at: staging) }
 
         let newApp = try extract(archive, in: staging)
+        await progressHandler?(0.95)
         try validate(newApp, expectedVersion: expectedVersion)
+        await progressHandler?(0.98)
         // Replacing the running bundle is safe: the kernel keeps the mapped
         // binary alive until the process exits.
         _ = try FileManager.default.replaceItemAt(bundleURL, withItemAt: newApp)
+        await progressHandler?(1.0)
         await relaunch(bundleURL)
     }
 
@@ -101,8 +113,16 @@ enum SelfUpdater {
     /// Downloads to a temporary file and returns its bytes, refusing files
     /// larger than `limit`: release assets are attacker-sized until the
     /// signature check passes, and the caller buffers the result in memory.
-    private static func fetch(_ url: URL, limit: Int) async throws -> Data {
-        let (file, response) = try await URLSession.shared.download(from: url)
+    private static func fetch(
+        _ url: URL,
+        limit: Int,
+        progressHandler: (@Sendable (Double) async -> Void)? = nil
+    ) async throws -> Data {
+        let delegate = DownloadDelegate(progressHandler: progressHandler)
+        let session = URLSession(configuration: .default, delegate: delegate, delegateQueue: nil)
+        defer { session.invalidateAndCancel() }
+
+        let (file, response) = try await session.download(from: url)
         defer { try? FileManager.default.removeItem(at: file) }
         if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
             throw UpdateError.httpStatus(http.statusCode)
@@ -112,6 +132,32 @@ enum SelfUpdater {
             throw UpdateError.downloadTooLarge(bytes: bytes, limit: limit)
         }
         return try Data(contentsOf: file)
+    }
+
+    private final class DownloadDelegate: NSObject, URLSessionDownloadDelegate, Sendable {
+        private let progressHandler: (@Sendable (Double) async -> Void)?
+
+        init(progressHandler: (@Sendable (Double) async -> Void)?) {
+            self.progressHandler = progressHandler
+        }
+
+        func urlSession(
+            _ session: URLSession,
+            downloadTask: URLSessionDownloadTask,
+            didWriteData bytesWritten: Int64,
+            totalBytesWritten: Int64,
+            totalBytesExpectedToWrite: Int64
+        ) {
+            guard totalBytesExpectedToWrite > 0, let handler = progressHandler else { return }
+            let progress = Double(totalBytesWritten) / Double(totalBytesExpectedToWrite)
+            Task { await handler(0.05 + progress * 0.75) }
+        }
+
+        func urlSession(
+            _ session: URLSession,
+            downloadTask: URLSessionDownloadTask,
+            didFinishDownloadingTo location: URL
+        ) {}
     }
 
     private static func verify(archive: Data, signature: Data) throws {

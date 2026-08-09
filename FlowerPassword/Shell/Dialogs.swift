@@ -28,14 +28,6 @@ enum Dialogs {
             confirm: l10n.quitConfirm, dismiss: l10n.quitCancel)
     }
 
-    /// Returns true when the user chose to install the update in place.
-    static func updateAvailable(_ l10n: L10n, current: String, latest: String) -> Bool {
-        ask(
-            style: .informational, message: l10n.updateAvailableMessage(current, latest),
-            detail: l10n.updateInstallDetail, confirm: l10n.updateInstallButton,
-            dismiss: l10n.updateLaterButton)
-    }
-
     /// Fallback for releases without a signed archive: returns true when
     /// the user chose to open the download page.
     static func updateAvailableManual(_ l10n: L10n, current: String, latest: String) -> Bool {

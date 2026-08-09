@@ -58,6 +58,12 @@ struct L10n: Sendable {
     let ok: String
     let cancel: String
 
+    // Update window
+    let updateWindowTitle: String
+    let updateWindowSkip: String
+    let updateWindowInstall: String
+    let updateDownloading: String
+
     static func strings(for language: ResolvedLanguage) -> L10n {
         switch language {
         case .zhCN: .zhCN
@@ -129,7 +135,11 @@ struct L10n: Sendable {
         updateNoUpdateMessage: "您正在使用最新版本。",
         updateErrorMessage: "检查更新失败。",
         ok: "确定",
-        cancel: "取消"
+        cancel: "取消",
+        updateWindowTitle: "新版本可用",
+        updateWindowSkip: "跳过",
+        updateWindowInstall: "立即安装",
+        updateDownloading: "正在下载更新..."
     )
 
     static let zhTW = L10n(
@@ -178,7 +188,11 @@ struct L10n: Sendable {
         updateNoUpdateMessage: "您正在使用最新版本。",
         updateErrorMessage: "檢查更新失敗。",
         ok: "確定",
-        cancel: "取消"
+        cancel: "取消",
+        updateWindowTitle: "新版本可用",
+        updateWindowSkip: "跳過",
+        updateWindowInstall: "立即安裝",
+        updateDownloading: "正在下載更新..."
     )
 
     static let enUS = L10n(
@@ -231,6 +245,10 @@ struct L10n: Sendable {
         updateNoUpdateMessage: "You are using the latest version.",
         updateErrorMessage: "Failed to check for updates.",
         ok: "OK",
-        cancel: "Cancel"
+        cancel: "Cancel",
+        updateWindowTitle: "New Version Available",
+        updateWindowSkip: "Skip",
+        updateWindowInstall: "Install Now",
+        updateDownloading: "Downloading update..."
     )
 }
