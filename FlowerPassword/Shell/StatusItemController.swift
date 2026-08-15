@@ -28,14 +28,21 @@ final class StatusItemController: NSObject {
         let icon = NSImage(named: "Mono")
         icon?.isTemplate = true
         button.image = icon
-        button.toolTip = state.l10n.trayTooltip
         button.target = self
         button.action = #selector(statusItemClicked)
         button.sendAction(on: [.leftMouseUp, .rightMouseUp])
+        refreshTooltip()
+    }
+
+    /// The tooltip is derived from the current language, so it is refreshed on
+    /// every interaction rather than only when the menu opens.
+    private func refreshTooltip() {
+        statusItem.button?.toolTip = state.l10n.trayTooltip
     }
 
     @objc private func statusItemClicked() {
         guard let event = NSApp.currentEvent else { return }
+        refreshTooltip()
         if event.type == .rightMouseUp || event.modifierFlags.contains(.control) {
             handleRightClick()
         } else {
@@ -50,8 +57,6 @@ final class StatusItemController: NSObject {
 
     private func handleRightClick() {
         panels.hide()
-        // Refresh the tooltip to reflect any language change since last open.
-        statusItem.button?.toolTip = state.l10n.trayTooltip
         // Assign the menu just for this click so left-click keeps toggling
         // the panel instead of opening the menu.
         statusItem.menu = buildMenu()

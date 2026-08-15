@@ -169,7 +169,7 @@ enum SelfUpdater {
             throw UpdateError.wrongBundle(
                 "unexpected bundle identifier \(bundle.bundleIdentifier ?? "nil")")
         }
-        let version = bundle.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
+        let version = bundle.shortVersion
         guard version == expectedVersion else {
             throw UpdateError.wrongBundle(
                 "version \(version ?? "nil") does not match release \(expectedVersion)")
@@ -197,5 +197,13 @@ extension HTTPURLResponse {
         guard (200...299).contains(statusCode) else {
             throw SelfUpdater.UpdateError.httpStatus(statusCode)
         }
+    }
+}
+
+extension Bundle {
+    /// The bundle's marketing version — the single place the
+    /// CFBundleShortVersionString key is spelled out.
+    var shortVersion: String? {
+        object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
     }
 }

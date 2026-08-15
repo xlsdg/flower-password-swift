@@ -20,10 +20,7 @@ final class ClipboardService {
         ownedChangeCount = pasteboard.changeCount
 
         let work = DispatchWorkItem { [weak self] in
-            guard let self else { return }
-            if NSPasteboard.general.changeCount == self.ownedChangeCount {
-                NSPasteboard.general.clearContents()
-            }
+            self?.clearIfStillOwned()
         }
         pendingClear = work
         DispatchQueue.main.asyncAfter(deadline: .now() + Self.clearDelay, execute: work)
@@ -35,8 +32,14 @@ final class ClipboardService {
     func clearIfOwned() {
         pendingClear?.cancel()
         pendingClear = nil
-        if NSPasteboard.general.changeCount == ownedChangeCount {
-            NSPasteboard.general.clearContents()
-        }
+        clearIfStillOwned()
+    }
+
+    /// Clears the pasteboard only while it still holds what this service
+    /// last wrote — the single place that ownership rule lives.
+    private func clearIfStillOwned() {
+        let pasteboard = NSPasteboard.general
+        guard pasteboard.changeCount == ownedChangeCount else { return }
+        pasteboard.clearContents()
     }
 }

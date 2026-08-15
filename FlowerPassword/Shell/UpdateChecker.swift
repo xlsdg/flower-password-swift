@@ -63,7 +63,7 @@ final class UpdateChecker {
     }
 
     private static var currentVersion: String {
-        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.0.0"
+        Bundle.main.shortVersion ?? "0.0.0"
     }
 
     private static func fetchLatestRelease() async throws -> Release {

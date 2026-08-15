@@ -6,13 +6,11 @@ public struct Release: Decodable, Equatable, Sendable {
     public let tagName: String
     public let htmlUrl: String
     public let assets: [Asset]
-    public let body: String
 
-    public init(tagName: String, htmlUrl: String, assets: [Asset], body: String = "") {
+    public init(tagName: String, htmlUrl: String, assets: [Asset]) {
         self.tagName = tagName
         self.htmlUrl = htmlUrl
         self.assets = assets
-        self.body = body
     }
 
     public struct Asset: Decodable, Equatable, Sendable {

@@ -71,8 +71,7 @@ enum Dialogs {
         let alert = makeAlert(style: style, message: message, detail: detail)
         alert.addButton(withTitle: confirm)
         alert.addButton(withTitle: dismiss)
-        NSApp.activate(ignoringOtherApps: true)
-        return alert.runModal() == .alertFirstButtonReturn
+        return run(alert) == .alertFirstButtonReturn
     }
 
     private static func makeAlert(style: NSAlert.Style, message: String, detail: String? = nil) -> NSAlert {
@@ -85,9 +84,15 @@ enum Dialogs {
         return alert
     }
 
-    private static func runAlert(style: NSAlert.Style, message: String, detail: String? = nil) {
-        let alert = makeAlert(style: style, message: message, detail: detail)
+    /// Activates the app (required for accessory apps to bring alerts to
+    /// front) then runs the alert modally.
+    @discardableResult
+    private static func run(_ alert: NSAlert) -> NSApplication.ModalResponse {
         NSApp.activate(ignoringOtherApps: true)
-        alert.runModal()
+        return alert.runModal()
+    }
+
+    private static func runAlert(style: NSAlert.Style, message: String, detail: String? = nil) {
+        run(makeAlert(style: style, message: message, detail: detail))
     }
 }
