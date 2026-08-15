@@ -133,7 +133,8 @@ final class PanelController: NSObject {
     /// www.google.co.uk) replaces the distinction code.
     private func prefillKeyFromClipboard() {
         guard let text = NSPasteboard.general.string(forType: .string),
-            let label = PublicSuffix.shared.registrableLabel(fromURLText: text)
+            let label = PublicSuffix.shared.registrableLabel(fromURLText: text),
+            label != state.key
         else { return }
         state.key = label
     }

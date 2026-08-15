@@ -50,6 +50,8 @@ final class StatusItemController: NSObject {
 
     private func handleRightClick() {
         panels.hide()
+        // Refresh the tooltip to reflect any language change since last open.
+        statusItem.button?.toolTip = state.l10n.trayTooltip
         // Assign the menu just for this click so left-click keeps toggling
         // the panel instead of opening the menu.
         statusItem.menu = buildMenu()
@@ -110,9 +112,7 @@ final class StatusItemController: NSObject {
     private func languageItems(_ l10n: L10n) -> [NSMenuItem] {
         LanguageMode.allCases.map { mode in
             ActionMenuItem(title: l10n.languageName(mode), checked: state.language == mode) { [weak self] in
-                guard let self else { return }
-                self.state.language = mode
-                self.statusItem.button?.toolTip = self.state.l10n.trayTooltip
+                self?.state.language = mode
             }
         }
     }
