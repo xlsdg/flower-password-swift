@@ -66,18 +66,11 @@ final class UpdateChecker {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.0.0"
     }
 
-    private struct HTTPStatusError: LocalizedError {
-        let statusCode: Int
-        var errorDescription: String? { "GitHub API returned \(statusCode)" }
-    }
-
     private static func fetchLatestRelease() async throws -> Release {
         var request = URLRequest(url: latestReleaseURL)
         request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
         let (data, response) = try await URLSession.shared.data(for: request)
-        if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
-            throw HTTPStatusError(statusCode: http.statusCode)
-        }
+        try (response as? HTTPURLResponse)?.validateSuccessStatus()
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
         return try decoder.decode(Release.self, from: data)

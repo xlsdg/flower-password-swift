@@ -4,7 +4,6 @@ enum PanelMetrics {
     static let width: CGFloat = 300
     static let height: CGFloat = 334
     static let cornerRadius: CGFloat = 12
-    static var size: NSSize { NSSize(width: width, height: height) }
 }
 
 /// Borderless, non-activating floating panel hosting the SwiftUI form:
@@ -15,7 +14,7 @@ final class FloatingPanel: NSPanel {
 
     init() {
         super.init(
-            contentRect: NSRect(origin: .zero, size: PanelMetrics.size),
+            contentRect: NSRect(origin: .zero, size: NSSize(width: PanelMetrics.width, height: PanelMetrics.height)),
             styleMask: [.borderless, .nonactivatingPanel],
             backing: .buffered,
             defer: false

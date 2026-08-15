@@ -112,7 +112,7 @@ final class StatusItemController: NSObject {
             ActionMenuItem(title: l10n.languageName(mode), checked: state.language == mode) { [weak self] in
                 guard let self else { return }
                 self.state.language = mode
-                self.refreshTooltip()
+                self.statusItem.button?.toolTip = self.state.l10n.trayTooltip
             }
         }
     }
@@ -136,10 +136,6 @@ final class StatusItemController: NSObject {
     }
 
     // MARK: - Actions
-
-    private func refreshTooltip() {
-        statusItem.button?.toolTip = state.l10n.trayTooltip
-    }
 
     private func toggleAutoLaunch() {
         do {
