@@ -46,10 +46,8 @@ final class UpdateChecker {
                             expectedVersion: latest
                         )
                     } catch {
-                        if Dialogs.updateInstallFailed(l10n, detail: error.localizedDescription),
-                            let url = URL(string: release.htmlUrl)
-                        {
-                            NSWorkspace.shared.open(url)
+                        if Dialogs.updateInstallFailed(l10n, detail: error.localizedDescription) {
+                            NSWorkspace.shared.open(release.pageURL)
                         }
                     }
 

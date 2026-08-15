@@ -61,9 +61,10 @@ enum SelfUpdater {
         let bundleURL = Bundle.main.bundleURL
         try preflight(bundleURL)
 
-        let archive = try await fetch(zipURL, limit: maxArchiveBytes, progressHandler: nil)
-        let signature = try await fetch(signatureURL, limit: maxSignatureBytes, progressHandler: nil)
-        try verify(archive: archive, signature: signature)
+        async let archive = fetch(zipURL, limit: maxArchiveBytes)
+        async let signature = fetch(signatureURL, limit: maxSignatureBytes)
+        let (archiveData, signatureData) = try await (archive, signature)
+        try verify(archive: archiveData, signature: signatureData)
 
         // itemReplacementDirectory keeps staging on the same volume as the
         // installed app, so the swap below is a pure rename.
@@ -72,7 +73,7 @@ enum SelfUpdater {
             appropriateFor: bundleURL, create: true)
         defer { try? FileManager.default.removeItem(at: staging) }
 
-        let newApp = try extract(archive, in: staging)
+        let newApp = try extract(archiveData, in: staging)
         try validate(newApp, expectedVersion: expectedVersion)
         // Replacing the running bundle is safe: the kernel keeps the mapped
         // binary alive until the process exits.
@@ -105,16 +106,8 @@ enum SelfUpdater {
     /// Downloads to a temporary file and returns its bytes, refusing files
     /// larger than `limit`: release assets are attacker-sized until the
     /// signature check passes, and the caller buffers the result in memory.
-    private static func fetch(
-        _ url: URL,
-        limit: Int,
-        progressHandler: (@Sendable (Double) async -> Void)? = nil
-    ) async throws -> Data {
-        let delegate = DownloadDelegate(progressHandler: progressHandler)
-        let session = URLSession(configuration: .default, delegate: delegate, delegateQueue: nil)
-        defer { session.invalidateAndCancel() }
-
-        let (file, response) = try await session.download(from: url)
+    private static func fetch(_ url: URL, limit: Int) async throws -> Data {
+        let (file, response) = try await URLSession.shared.download(from: url)
         defer { try? FileManager.default.removeItem(at: file) }
         try (response as? HTTPURLResponse)?.validateSuccessStatus()
         let bytes = try file.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
@@ -122,32 +115,6 @@ enum SelfUpdater {
             throw UpdateError.downloadTooLarge(bytes: bytes, limit: limit)
         }
         return try Data(contentsOf: file)
-    }
-
-    private final class DownloadDelegate: NSObject, URLSessionDownloadDelegate, Sendable {
-        private let progressHandler: (@Sendable (Double) async -> Void)?
-
-        init(progressHandler: (@Sendable (Double) async -> Void)?) {
-            self.progressHandler = progressHandler
-        }
-
-        func urlSession(
-            _ session: URLSession,
-            downloadTask: URLSessionDownloadTask,
-            didWriteData bytesWritten: Int64,
-            totalBytesWritten: Int64,
-            totalBytesExpectedToWrite: Int64
-        ) {
-            guard totalBytesExpectedToWrite > 0, let handler = progressHandler else { return }
-            let progress = Double(totalBytesWritten) / Double(totalBytesExpectedToWrite)
-            Task { await handler(0.05 + progress * 0.75) }
-        }
-
-        func urlSession(
-            _ session: URLSession,
-            downloadTask: URLSessionDownloadTask,
-            didFinishDownloadingTo location: URL
-        ) {}
     }
 
     private static func verify(archive: Data, signature: Data) throws {
