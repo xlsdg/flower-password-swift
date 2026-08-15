@@ -56,19 +56,14 @@ enum SelfUpdater {
     static func install(
         zipURL: URL,
         signatureURL: URL,
-        expectedVersion: String,
-        progressHandler: (@Sendable (Double) async -> Void)? = nil
+        expectedVersion: String
     ) async throws {
         let bundleURL = Bundle.main.bundleURL
         try preflight(bundleURL)
 
-        await progressHandler?(0.05)
-        let archive = try await fetch(zipURL, limit: maxArchiveBytes, progressHandler: progressHandler)
-        await progressHandler?(0.80)
+        let archive = try await fetch(zipURL, limit: maxArchiveBytes, progressHandler: nil)
         let signature = try await fetch(signatureURL, limit: maxSignatureBytes, progressHandler: nil)
-        await progressHandler?(0.85)
         try verify(archive: archive, signature: signature)
-        await progressHandler?(0.90)
 
         // itemReplacementDirectory keeps staging on the same volume as the
         // installed app, so the swap below is a pure rename.
@@ -78,13 +73,10 @@ enum SelfUpdater {
         defer { try? FileManager.default.removeItem(at: staging) }
 
         let newApp = try extract(archive, in: staging)
-        await progressHandler?(0.95)
         try validate(newApp, expectedVersion: expectedVersion)
-        await progressHandler?(0.98)
         // Replacing the running bundle is safe: the kernel keeps the mapped
         // binary alive until the process exits.
         _ = try FileManager.default.replaceItemAt(bundleURL, withItemAt: newApp)
-        await progressHandler?(1.0)
         await relaunch(bundleURL)
     }
 

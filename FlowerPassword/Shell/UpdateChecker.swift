@@ -1,5 +1,4 @@
 import AppKit
-import SwiftUI
 
 import FlowerPasswordCore
 
@@ -12,8 +11,6 @@ import FlowerPasswordCore
 final class UpdateChecker {
     private let state: AppState
     private var isChecking = false
-    private var updateWindow: NSWindow?
-    private var progressWindow: NSWindow?
 
     private static let latestReleaseURL = URL(
         string: "https://api.github.com/repos/xlsdg/flower-password-swift/releases/latest")!
@@ -39,28 +36,16 @@ final class UpdateChecker {
                     Dialogs.noUpdate(l10n, version: current)
 
                 case .installable(let archiveURL, let signatureURL):
-                    let shouldInstall = await showUpdateWindow(
-                        current: current,
-                        latest: latest,
-                        releaseNotes: release.body
-                    )
-                    guard shouldInstall else { return }
-
-                    let progressState = DownloadProgress()
-                    await showProgressWindow(with: progressState)
+                    guard Dialogs.updateAvailableInstall(l10n, current: current, latest: latest) else {
+                        return
+                    }
                     do {
                         try await SelfUpdater.install(
                             zipURL: archiveURL,
                             signatureURL: signatureURL,
-                            expectedVersion: latest,
-                            progressHandler: { progress in
-                                await MainActor.run {
-                                    progressState.value = progress
-                                }
-                            }
+                            expectedVersion: latest
                         )
                     } catch {
-                        await closeProgressWindow()
                         if Dialogs.updateInstallFailed(l10n, detail: error.localizedDescription),
                             let url = URL(string: release.htmlUrl)
                         {
@@ -83,91 +68,20 @@ final class UpdateChecker {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.0.0"
     }
 
+    private struct HTTPStatusError: LocalizedError {
+        let statusCode: Int
+        var errorDescription: String? { "GitHub API returned \(statusCode)" }
+    }
+
     private static func fetchLatestRelease() async throws -> Release {
         var request = URLRequest(url: latestReleaseURL)
         request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
         let (data, response) = try await URLSession.shared.data(for: request)
-        try (response as? HTTPURLResponse)?.validateSuccessStatus()
+        if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
+            throw HTTPStatusError(statusCode: http.statusCode)
+        }
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
         return try decoder.decode(Release.self, from: data)
-    }
-
-    private func showUpdateWindow(current: String, latest: String, releaseNotes: String) async -> Bool {
-        await withCheckedContinuation { continuation in
-            let l10n = state.l10n
-            var shouldInstall = false
-
-            var window: NSWindow!
-            window = makeWindow(
-                size: NSSize(width: 520, height: 440),
-                title: l10n.updateWindowTitle,
-                styleMask: [.titled, .closable],
-                content: UpdateWindow(
-                    currentVersion: current,
-                    newVersion: latest,
-                    releaseNotes: releaseNotes,
-                    l10n: l10n,
-                    onInstall: {
-                        shouldInstall = true
-                        window.close()
-                    },
-                    onSkip: {
-                        window.close()
-                    }
-                )
-            )
-            self.updateWindow = window
-            present(window)
-
-            NotificationCenter.default.addObserver(
-                forName: NSWindow.willCloseNotification,
-                object: window,
-                queue: .main
-            ) { [weak self] _ in
-                self?.updateWindow = nil
-                continuation.resume(returning: shouldInstall)
-            }
-        }
-    }
-
-    private func makeWindow<V: View>(
-        size: NSSize,
-        title: String,
-        styleMask: NSWindow.StyleMask,
-        content: V
-    ) -> NSWindow {
-        let window = NSWindow(
-            contentRect: NSRect(origin: .zero, size: size),
-            styleMask: styleMask,
-            backing: .buffered,
-            defer: false
-        )
-        window.title = title
-        window.center()
-        window.isReleasedWhenClosed = false
-        window.contentView = NSHostingView(rootView: content)
-        return window
-    }
-
-    private func present(_ window: NSWindow) {
-        window.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
-    }
-
-    private func showProgressWindow(with progress: DownloadProgress) async {
-        let window = makeWindow(
-            size: NSSize(width: 400, height: 120),
-            title: state.l10n.updateDownloading,
-            styleMask: [.titled],
-            content: UpdateProgressWindow(progress: progress, l10n: state.l10n)
-        )
-        self.progressWindow = window
-        present(window)
-    }
-
-    private func closeProgressWindow() async {
-        progressWindow?.close()
-        progressWindow = nil
     }
 }
