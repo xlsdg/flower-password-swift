@@ -83,18 +83,11 @@ final class UpdateChecker {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.0.0"
     }
 
-    private struct HTTPStatusError: LocalizedError {
-        let statusCode: Int
-        var errorDescription: String? { "GitHub API returned \(statusCode)" }
-    }
-
     private static func fetchLatestRelease() async throws -> Release {
         var request = URLRequest(url: latestReleaseURL)
         request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
         let (data, response) = try await URLSession.shared.data(for: request)
-        if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
-            throw HTTPStatusError(statusCode: http.statusCode)
-        }
+        try (response as? HTTPURLResponse)?.validateSuccessStatus()
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
         return try decoder.decode(Release.self, from: data)
@@ -105,18 +98,12 @@ final class UpdateChecker {
             let l10n = state.l10n
             var shouldInstall = false
 
-            let window = NSWindow(
-                contentRect: NSRect(x: 0, y: 0, width: 520, height: 440),
+            var window: NSWindow!
+            window = makeWindow(
+                size: NSSize(width: 520, height: 440),
+                title: l10n.updateWindowTitle,
                 styleMask: [.titled, .closable],
-                backing: .buffered,
-                defer: false
-            )
-            window.title = l10n.updateWindowTitle
-            window.center()
-            window.isReleasedWhenClosed = false
-
-            let hostingView = NSHostingView(
-                rootView: UpdateWindow(
+                content: UpdateWindow(
                     currentVersion: current,
                     newVersion: latest,
                     releaseNotes: releaseNotes,
@@ -126,15 +113,12 @@ final class UpdateChecker {
                         window.close()
                     },
                     onSkip: {
-                        shouldInstall = false
                         window.close()
                     }
                 )
             )
-            window.contentView = hostingView
             self.updateWindow = window
-            window.makeKeyAndOrderFront(nil)
-            NSApp.activate(ignoringOtherApps: true)
+            present(window)
 
             NotificationCenter.default.addObserver(
                 forName: NSWindow.willCloseNotification,
@@ -147,31 +131,43 @@ final class UpdateChecker {
         }
     }
 
-    private func showProgressWindow(with progress: DownloadProgress) async {
-        let l10n = state.l10n
+    private func makeWindow<V: View>(
+        size: NSSize,
+        title: String,
+        styleMask: NSWindow.StyleMask,
+        content: V
+    ) -> NSWindow {
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 400, height: 120),
-            styleMask: [.titled],
+            contentRect: NSRect(origin: .zero, size: size),
+            styleMask: styleMask,
             backing: .buffered,
             defer: false
         )
-        window.title = l10n.updateDownloading
+        window.title = title
         window.center()
         window.isReleasedWhenClosed = false
+        window.contentView = NSHostingView(rootView: content)
+        return window
+    }
 
-        let hostingView = NSHostingView(
-            rootView: UpdateProgressWindow(progress: progress, l10n: l10n)
-        )
-        window.contentView = hostingView
-        self.progressWindow = window
+    private func present(_ window: NSWindow) {
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
     }
 
+    private func showProgressWindow(with progress: DownloadProgress) async {
+        let window = makeWindow(
+            size: NSSize(width: 400, height: 120),
+            title: state.l10n.updateDownloading,
+            styleMask: [.titled],
+            content: UpdateProgressWindow(progress: progress, l10n: state.l10n)
+        )
+        self.progressWindow = window
+        present(window)
+    }
+
     private func closeProgressWindow() async {
-        await MainActor.run {
-            progressWindow?.close()
-            progressWindow = nil
-        }
+        progressWindow?.close()
+        progressWindow = nil
     }
 }

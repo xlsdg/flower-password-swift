@@ -8,8 +8,6 @@ struct UpdateWindow: View {
     let onInstall: () -> Void
     let onSkip: () -> Void
 
-    @Environment(\.dismiss) private var dismiss
-
     var body: some View {
         VStack(spacing: 20) {
             HStack(spacing: 16) {
@@ -38,7 +36,6 @@ struct UpdateWindow: View {
 
             HStack(spacing: 12) {
                 Button(l10n.updateWindowSkip) {
-                    dismiss()
                     onSkip()
                 }
                 .keyboardShortcut(.cancelAction)
@@ -46,7 +43,6 @@ struct UpdateWindow: View {
                 Spacer()
 
                 Button(l10n.updateWindowInstall) {
-                    dismiss()
                     onInstall()
                 }
                 .keyboardShortcut(.defaultAction)

@@ -103,8 +103,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -o pipefail
-          gh release download "$GITHUB_REF_NAME" --pattern '*.zip' --dir asset
-          ZIP=$(ls asset/*.zip)
+          ZIP=$(ls dist/*.zip)
           VERSION=$(basename "$ZIP" .zip)
           VERSION=${VERSION#FlowerPassword-}
           SHA256=$(shasum -a 256 "$ZIP" | awk '{print $1}')

@@ -88,7 +88,7 @@ final class AppState {
         prefix = defaults.string(forKey: Keys.prefix) ?? ""
         suffix = defaults.string(forKey: Keys.suffix) ?? ""
         let storedLength = defaults.integer(forKey: Keys.passwordLength)
-        passwordLength = (PasswordLength.range).contains(storedLength) ? storedLength : PasswordLength.default
+        passwordLength = PasswordLength.range.contains(storedLength) ? storedLength : PasswordLength.default
         theme = defaults.string(forKey: Keys.theme).flatMap(ThemeMode.init) ?? .auto
         language = defaults.string(forKey: Keys.language).flatMap(LanguageMode.init) ?? .auto
         shortcut = defaults.string(forKey: Keys.globalShortcut).flatMap(ShortcutOption.init) ?? .commandOptionS

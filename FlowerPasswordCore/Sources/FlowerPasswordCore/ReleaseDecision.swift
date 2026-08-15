@@ -31,6 +31,13 @@ public struct Release: Decodable, Equatable, Sendable {
     public var normalizedVersion: String {
         tagName.hasPrefix("v") ? String(tagName.dropFirst()) : tagName
     }
+
+    /// The release page to send users to when automatic installation is not
+    /// possible, falling back to the repository when `htmlUrl` is unusable.
+    /// The single place callers should read the release's page URL.
+    public var pageURL: URL {
+        URL(string: htmlUrl) ?? URL(string: "https://github.com/xlsdg/flower-password-swift/releases")!
+    }
 }
 
 /// The outcome of comparing the current version against a release: up to date,
@@ -59,9 +66,6 @@ public enum ReleaseDecision: Equatable, Sendable {
             return .upToDate
         }
 
-        let manual = ReleaseDecision.manualOnly(
-            pageURL: URL(string: release.htmlUrl) ?? URL(string: "https://github.com")!)
-
         // The archive name contract with scripts/release.sh: the zip is named
         // "FlowerPassword-{version}.zip", the signature is "{zip}.sig", and
         // only HTTPS URLs are safe for automatic installation.
@@ -72,7 +76,7 @@ public enum ReleaseDecision: Equatable, Sendable {
             let zipURL = URL(string: zipAsset.browserDownloadUrl), zipURL.scheme == "https",
             let signatureURL = URL(string: signatureAsset.browserDownloadUrl), signatureURL.scheme == "https"
         else {
-            return manual
+            return .manualOnly(pageURL: release.pageURL)
         }
 
         return .installable(archiveURL: zipURL, signatureURL: signatureURL)

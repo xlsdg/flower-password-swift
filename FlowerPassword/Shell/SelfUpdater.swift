@@ -124,9 +124,7 @@ enum SelfUpdater {
 
         let (file, response) = try await session.download(from: url)
         defer { try? FileManager.default.removeItem(at: file) }
-        if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
-            throw UpdateError.httpStatus(http.statusCode)
-        }
+        try (response as? HTTPURLResponse)?.validateSuccessStatus()
         let bytes = try file.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
         guard bytes <= limit else {
             throw UpdateError.downloadTooLarge(bytes: bytes, limit: limit)
@@ -232,5 +230,13 @@ enum SelfUpdater {
         ]
         try? waiter.run()
         NSApp.terminate(nil)
+    }
+}
+
+extension HTTPURLResponse {
+    func validateSuccessStatus() throws {
+        guard (200...299).contains(statusCode) else {
+            throw SelfUpdater.UpdateError.httpStatus(statusCode)
+        }
     }
 }

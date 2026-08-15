@@ -76,6 +76,7 @@ public struct PublicSuffix: Sendable {
         var matchStart: Int?
         var exceptionStart: Int?
         for start in labels.indices {
+            if matchStart != nil, exceptionStart != nil { break }
             let candidate = labels[start...].joined(separator: ".")
             if exceptionStart == nil, exceptionRules.contains(candidate) {
                 exceptionStart = start

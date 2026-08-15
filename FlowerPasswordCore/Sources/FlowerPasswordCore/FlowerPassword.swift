@@ -17,6 +17,7 @@ public enum FlowerPassword {
     /// Character transformation rules are keyed off this string; it is part
     /// of the Flower Password algorithm specification.
     private static let magicString = "sunlovesnow1990090127xykab"
+    private static let magicCharacters = Set(magicString)
 
     /// Derives the site password from the memory password and distinction code.
     /// - Throws: `LengthError.outOfRange` if `length` is not within 2...32.
@@ -32,7 +33,7 @@ public enum FlowerPassword {
         // Uppercase source letters wherever the rule character appears in the
         // magic string; digits in the source pass through untouched.
         for index in sourceChars.indices where !sourceChars[index].isNumber {
-            if magicString.contains(ruleChars[index]) {
+            if magicCharacters.contains(ruleChars[index]) {
                 sourceChars[index] = Character(sourceChars[index].uppercased())
             }
         }
