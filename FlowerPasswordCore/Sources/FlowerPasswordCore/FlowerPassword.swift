@@ -18,6 +18,8 @@ public enum FlowerPassword {
     /// of the Flower Password algorithm specification.
     private static let magicString = "sunlovesnow1990090127xykab"
     private static let magicCharacters = Set(magicString)
+    private static let kiseKey = SymmetricKey(data: Data("kise".utf8))
+    private static let snowKey = SymmetricKey(data: Data("snow".utf8))
 
     /// Derives the site password from the memory password and distinction code.
     /// - Throws: `LengthError.outOfRange` if `length` is not within 2...32.
@@ -26,9 +28,9 @@ public enum FlowerPassword {
             throw LengthError.outOfRange(length)
         }
 
-        let baseHash = hmacMD5Hex(message: password, key: key)
-        let ruleChars = Array(hmacMD5Hex(message: baseHash, key: "kise"))
-        var sourceChars = Array(hmacMD5Hex(message: baseHash, key: "snow"))
+        let baseHash = hmacMD5Hex(message: password, key: SymmetricKey(data: Data(key.utf8)))
+        let ruleChars = Array(hmacMD5Hex(message: baseHash, key: kiseKey))
+        var sourceChars = Array(hmacMD5Hex(message: baseHash, key: snowKey))
 
         // Uppercase source letters wherever the rule character appears in the
         // magic string; digits in the source pass through untouched.
@@ -38,16 +40,22 @@ public enum FlowerPassword {
             }
         }
 
-        // The first character must be a letter; a digit is replaced by "K".
-        let first = sourceChars[0].isNumber ? "K" : String(sourceChars[0])
-        return first + String(sourceChars[1..<length])
+        if sourceChars[0].isNumber {
+            sourceChars[0] = "K"
+        }
+        return String(sourceChars.prefix(length))
     }
 
-    private static func hmacMD5Hex(message: String, key: String) -> String {
+    private static func hmacMD5Hex(message: String, key: SymmetricKey) -> String {
         let mac = HMAC<Insecure.MD5>.authenticationCode(
             for: Data(message.utf8),
-            using: SymmetricKey(data: Data(key.utf8))
+            using: key
         )
-        return mac.map { String(format: "%02x", $0) }.joined()
+        var hex = String()
+        hex.reserveCapacity(32)
+        for byte in mac {
+            hex += String(format: "%02x", byte)
+        }
+        return hex
     }
 }
