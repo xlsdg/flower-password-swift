@@ -1,4 +1,28 @@
 import SwiftUI
+import AppKit
+
+private struct MarkdownTextView: NSViewRepresentable {
+    let markdown: String
+
+    func makeNSView(context: Context) -> NSScrollView {
+        let scrollView = NSTextView.scrollableTextView()
+        let textView = scrollView.documentView as! NSTextView
+        textView.isEditable = false
+        textView.isRichText = true
+        textView.drawsBackground = false
+        textView.textContainerInset = NSSize(width: 8, height: 8)
+        textView.isSelectable = true
+        return scrollView
+    }
+
+    func updateNSView(_ scrollView: NSScrollView, context: Context) {
+        let textView = scrollView.documentView as! NSTextView
+        let options = AttributedString.MarkdownParsingOptions(interpretedSyntax: .full)
+        let attrStr = (try? AttributedString(markdown: markdown, options: options))
+            ?? AttributedString(markdown)
+        textView.textStorage?.setAttributedString(NSAttributedString(attrStr))
+    }
+}
 
 struct UpdateWindow: View {
     let currentVersion: String
@@ -24,15 +48,10 @@ struct UpdateWindow: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            ScrollView {
-                Text(.init(releaseNotes))
-                    .textSelection(.enabled)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding()
-                    .background(Color(nsColor: .textBackgroundColor))
-                    .cornerRadius(8)
-            }
-            .frame(height: 300)
+            MarkdownTextView(markdown: releaseNotes)
+                .frame(height: 300)
+                .background(Color(nsColor: .textBackgroundColor))
+                .cornerRadius(8)
 
             HStack(spacing: 12) {
                 Button(l10n.updateWindowSkip) {
