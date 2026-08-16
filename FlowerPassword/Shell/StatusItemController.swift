@@ -79,8 +79,14 @@ final class StatusItemController: NSObject {
             })
         menu.addItem(.separator())
 
-        menu.addItem(submenuItem(title: l10n.menuTheme, items: themeItems(l10n)))
-        menu.addItem(submenuItem(title: l10n.menuLanguage, items: languageItems(l10n)))
+        menu.addItem(
+            picker(l10n.menuTheme, selected: state.theme, name: l10n.themeName) { [weak self] mode in
+                self?.state.theme = mode
+            })
+        menu.addItem(
+            picker(l10n.menuLanguage, selected: state.language, name: l10n.languageName) { [weak self] mode in
+                self?.state.language = mode
+            })
         menu.addItem(.separator())
 
         menu.addItem(
@@ -91,7 +97,10 @@ final class StatusItemController: NSObject {
             ActionMenuItem(title: l10n.menuAutoType, checked: delivery.willAutoType) { [weak self] in
                 self?.delivery.toggleAutoType()
             })
-        menu.addItem(submenuItem(title: l10n.menuGlobalShortcut, items: shortcutItems()))
+        menu.addItem(
+            picker(l10n.menuGlobalShortcut, selected: state.shortcut, name: \.displayName) { [weak self] option in
+                self?.changeShortcut(to: option)
+            })
         menu.addItem(
             ActionMenuItem(title: l10n.menuCheckUpdate) { [weak self] in
                 self?.updates.check()
@@ -106,35 +115,14 @@ final class StatusItemController: NSObject {
         return menu
     }
 
-    private func themeItems(_ l10n: L10n) -> [NSMenuItem] {
-        ThemeMode.allCases.map { mode in
-            ActionMenuItem(title: l10n.themeName(mode), checked: state.theme == mode) { [weak self] in
-                self?.state.theme = mode
-            }
-        }
-    }
-
-    private func languageItems(_ l10n: L10n) -> [NSMenuItem] {
-        LanguageMode.allCases.map { mode in
-            ActionMenuItem(title: l10n.languageName(mode), checked: state.language == mode) { [weak self] in
-                self?.state.language = mode
-            }
-        }
-    }
-
-    private func shortcutItems() -> [NSMenuItem] {
-        ShortcutOption.allCases.map { option in
-            ActionMenuItem(title: option.displayName, checked: state.shortcut == option) { [weak self] in
-                self?.changeShortcut(to: option)
-            }
-        }
-    }
-
-    private func submenuItem(title: String, items: [NSMenuItem]) -> NSMenuItem {
+    /// A submenu listing every case of `T`, with `selected` checkmarked.
+    private func picker<T: CaseIterable & Equatable>(
+        _ title: String, selected: T, name: (T) -> String, pick: @escaping (T) -> Void
+    ) -> NSMenuItem {
         let item = NSMenuItem(title: title, action: nil, keyEquivalent: "")
         let submenu = NSMenu()
-        for entry in items {
-            submenu.addItem(entry)
+        submenu.items = T.allCases.map { value in
+            ActionMenuItem(title: name(value), checked: value == selected) { pick(value) }
         }
         item.submenu = submenu
         return item

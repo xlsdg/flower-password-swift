@@ -119,11 +119,16 @@ struct ReleaseDecisionTests {
             ]
         )
         let decision = ReleaseDecision.decide(currentVersion: "1.2.3", release: release)
-        guard case let .manualOnly(pageURL) = decision else {
-            Issue.record("Expected .manualOnly, got \(decision)")
-            return
-        }
-        #expect(pageURL.absoluteString == "https://github.com/example/repo/releases/tag/1.2.4")
+        #expect(decision == .manualOnly)
+    }
+
+    @Test("pageURL uses htmlUrl, falling back to the releases page")
+    func pageURL() {
+        let release = Release(tagName: "1.2.4", htmlUrl: "https://github.com/example/repo/releases/tag/1.2.4", assets: [])
+        #expect(release.pageURL.absoluteString == "https://github.com/example/repo/releases/tag/1.2.4")
+
+        let broken = Release(tagName: "1.2.4", htmlUrl: "", assets: [])
+        #expect(broken.pageURL.absoluteString == "https://github.com/xlsdg/flower-password-swift/releases")
     }
 
     @Test("returns manualOnly when archive name does not match")
@@ -137,11 +142,7 @@ struct ReleaseDecisionTests {
             ]
         )
         let decision = ReleaseDecision.decide(currentVersion: "1.2.3", release: release)
-        if case .manualOnly = decision {
-            // pass
-        } else {
-            Issue.record("Expected .manualOnly, got \(decision)")
-        }
+        #expect(decision == .manualOnly)
     }
 
     @Test("returns manualOnly when no assets are present")
@@ -152,11 +153,7 @@ struct ReleaseDecisionTests {
             assets: []
         )
         let decision = ReleaseDecision.decide(currentVersion: "1.2.3", release: release)
-        if case .manualOnly = decision {
-            // pass
-        } else {
-            Issue.record("Expected .manualOnly, got \(decision)")
-        }
+        #expect(decision == .manualOnly)
     }
 
     // MARK: - HTTPS requirement
@@ -172,11 +169,7 @@ struct ReleaseDecisionTests {
             ]
         )
         let decision = ReleaseDecision.decide(currentVersion: "1.2.3", release: release)
-        if case .manualOnly = decision {
-            // pass
-        } else {
-            Issue.record("Expected .manualOnly, got \(decision)")
-        }
+        #expect(decision == .manualOnly)
     }
 
     @Test("returns manualOnly when signature URL is HTTP")
@@ -190,11 +183,7 @@ struct ReleaseDecisionTests {
             ]
         )
         let decision = ReleaseDecision.decide(currentVersion: "1.2.3", release: release)
-        if case .manualOnly = decision {
-            // pass
-        } else {
-            Issue.record("Expected .manualOnly, got \(decision)")
-        }
+        #expect(decision == .manualOnly)
     }
 
     // MARK: - Integration

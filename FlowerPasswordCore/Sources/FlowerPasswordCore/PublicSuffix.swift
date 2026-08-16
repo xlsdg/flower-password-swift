@@ -73,31 +73,17 @@ public struct PublicSuffix: Sendable {
         // Scanning from the longest candidate suffix down; the first exact or
         // wildcard hit is therefore the prevailing (longest) rule. Exception
         // rules take priority over everything per the PSL specification.
-        var matchStart: Int?
-        var exceptionStart: Int?
-        for start in labels.indices {
-            if matchStart != nil, exceptionStart != nil { break }
-            let candidate = labels[start...].joined(separator: ".")
-            if exceptionStart == nil, exceptionRules.contains(candidate) {
-                exceptionStart = start
-            }
-            if matchStart == nil {
-                if exactRules.contains(candidate) {
-                    matchStart = start
-                } else if start + 1 < labels.count,
-                    wildcardBases.contains(labels[(start + 1)...].joined(separator: "."))
-                {
-                    matchStart = start
-                }
-            }
-        }
+        func candidate(from start: Int) -> String { labels[start...].joined(separator: ".") }
 
         let suffixStart: Int
-        if let exceptionStart {
+        if let exception = labels.indices.first(where: { exceptionRules.contains(candidate(from: $0)) }) {
             // An exception rule's public suffix is the rule minus its leftmost label.
-            suffixStart = exceptionStart + 1
-        } else if let matchStart {
-            suffixStart = matchStart
+            suffixStart = exception + 1
+        } else if let match = labels.indices.first(where: { start in
+            exactRules.contains(candidate(from: start))
+                || (start + 1 < labels.count && wildcardBases.contains(candidate(from: start + 1)))
+        }) {
+            suffixStart = match
         } else {
             return nil
         }

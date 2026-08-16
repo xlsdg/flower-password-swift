@@ -44,7 +44,8 @@ public struct Release: Decodable, Equatable, Sendable {
 public enum ReleaseDecision: Equatable, Sendable {
     case upToDate
     case installable(archiveURL: URL, signatureURL: URL)
-    case manualOnly(pageURL: URL)
+    /// Callers send the user to `Release.pageURL`.
+    case manualOnly
 
     /// Decides what to do with a release from the GitHub API. Returns
     /// `.upToDate` when the release is not newer than `currentVersion`,
@@ -74,7 +75,7 @@ public enum ReleaseDecision: Equatable, Sendable {
             let zipURL = URL(string: zipAsset.browserDownloadUrl), zipURL.scheme == "https",
             let signatureURL = URL(string: signatureAsset.browserDownloadUrl), signatureURL.scheme == "https"
         else {
-            return .manualOnly(pageURL: release.pageURL)
+            return .manualOnly
         }
 
         return .installable(archiveURL: zipURL, signatureURL: signatureURL)

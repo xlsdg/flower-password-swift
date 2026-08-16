@@ -11,7 +11,10 @@ enum SelfUpdater {
     /// publish when the two no longer match.
     private static let publicKeyBase64 = "qf1aoyEllNVxl+neetyWDbL2tx3m1IA89qz/F0iD+7k="
 
-    enum UpdateError: LocalizedError {
+    /// Carries no prose: the user-facing sentences live in `L10n`, rendered
+    /// by `UpdateChecker`, so all three languages stay in one place.
+    /// `wrongBundle`'s reason is developer diagnostics and stays English.
+    enum UpdateError: Error {
         case translocated
         case notWritable(String)
         case volumeIgnoresOwnership(String)
@@ -21,29 +24,6 @@ enum SelfUpdater {
         case extractionFailed(Int32)
         case appMissingFromArchive
         case wrongBundle(String)
-
-        var errorDescription: String? {
-            switch self {
-            case .translocated:
-                "The app is running from a translocated path. Move FlowerPassword.app to /Applications and try again."
-            case .notWritable(let directory):
-                "No permission to replace the app in \(directory)."
-            case .volumeIgnoresOwnership(let directory):
-                "The volume holding \(directory) ignores file ownership, so in-place updates are unsafe there."
-            case .httpStatus(let status):
-                "Download failed with HTTP \(status)."
-            case .downloadTooLarge(let bytes, let limit):
-                "The download is \(bytes) bytes, above the \(limit)-byte limit."
-            case .invalidSignature:
-                "The update failed signature verification; the download may be corrupted or tampered with."
-            case .extractionFailed(let status):
-                "Could not extract the update archive (ditto exited with \(status))."
-            case .appMissingFromArchive:
-                "The update archive does not contain an app bundle."
-            case .wrongBundle(let reason):
-                "The downloaded app failed validation: \(reason)."
-            }
-        }
     }
 
     /// Downloads, verifies, and installs the update, then relaunches.
@@ -133,13 +113,9 @@ enum SelfUpdater {
         try archive.write(to: zipFile)
         let unpacked = staging.appendingPathComponent("unpacked", isDirectory: true)
 
-        let ditto = Process()
-        ditto.executableURL = URL(fileURLWithPath: "/usr/bin/ditto")
-        ditto.arguments = ["-xk", zipFile.path, unpacked.path]
-        try ditto.run()
-        ditto.waitUntilExit()
-        guard ditto.terminationStatus == 0 else {
-            throw UpdateError.extractionFailed(ditto.terminationStatus)
+        let status = run("/usr/bin/ditto", ["-xk", zipFile.path, unpacked.path])
+        guard status == 0 else {
+            throw UpdateError.extractionFailed(status)
         }
 
         let contents = try FileManager.default.contentsOfDirectory(
@@ -150,15 +126,24 @@ enum SelfUpdater {
 
         // URLSession and ditto do not quarantine, but strip defensively so
         // the relaunch can never hit a Gatekeeper prompt.
-        let xattr = Process()
-        xattr.executableURL = URL(fileURLWithPath: "/usr/bin/xattr")
-        xattr.arguments = ["-dr", "com.apple.quarantine", app.path]
-        xattr.standardError = FileHandle.nullDevice
-        if (try? xattr.run()) != nil {
-            xattr.waitUntilExit()
-        }
+        run("/usr/bin/xattr", ["-dr", "com.apple.quarantine", app.path], quiet: true)
 
         return app
+    }
+
+    /// Runs a tool to completion and returns its exit status, or -1 when it
+    /// could not be launched at all.
+    @discardableResult
+    private static func run(_ tool: String, _ arguments: [String], quiet: Bool = false) -> Int32 {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: tool)
+        process.arguments = arguments
+        if quiet {
+            process.standardError = FileHandle.nullDevice
+        }
+        guard (try? process.run()) != nil else { return -1 }
+        process.waitUntilExit()
+        return process.terminationStatus
     }
 
     private static func validate(_ app: URL, expectedVersion: String) throws {

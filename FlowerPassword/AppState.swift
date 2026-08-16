@@ -63,8 +63,16 @@ final class AppState {
     }
 
     var language: LanguageMode {
-        didSet { defaults.set(language.rawValue, forKey: Keys.language) }
+        didSet {
+            defaults.set(language.rawValue, forKey: Keys.language)
+            l10n = .strings(for: Self.resolve(language))
+        }
     }
+
+    /// The UI strings for the effective language. Stored rather than derived:
+    /// the form reads it dozens of times per body evaluation, and resolving
+    /// `.auto` hits the system locale every time.
+    private(set) var l10n: L10n
 
     var shortcut: ShortcutOption {
         didSet { defaults.set(shortcut.rawValue, forKey: Keys.globalShortcut) }
@@ -78,8 +86,10 @@ final class AppState {
     }
 
     /// Bumped on every panel show; the form moves keyboard focus in response.
-    private(set) var focusField: FocusField?
     private(set) var focusToken = 0
+
+    /// Where the panel should put the caret when it appears.
+    var focusField: FocusField { password.isEmpty ? .password : .key }
 
     @ObservationIgnored private let defaults: UserDefaults
 
@@ -90,22 +100,18 @@ final class AppState {
         let storedLength = defaults.integer(forKey: Keys.passwordLength)
         passwordLength = PasswordLength.range.contains(storedLength) ? storedLength : PasswordLength.default
         theme = defaults.string(forKey: Keys.theme).flatMap(ThemeMode.init) ?? .auto
-        language = defaults.string(forKey: Keys.language).flatMap(LanguageMode.init) ?? .auto
+        let language = defaults.string(forKey: Keys.language).flatMap(LanguageMode.init) ?? .auto
+        self.language = language
         shortcut = defaults.string(forKey: Keys.globalShortcut).flatMap(ShortcutOption.init) ?? .commandOptionS
         autoType = defaults.bool(forKey: Keys.autoType)
+        l10n = .strings(for: Self.resolve(language))
     }
 
-    var effectiveLanguage: ResolvedLanguage {
-        switch language {
-        case .zhCN: .zhCN
-        case .zhTW: .zhTW
-        case .enUS: .enUS
-        case .auto: ResolvedLanguage.detect(from: Locale.preferredLanguages.first)
-        }
+    /// `.auto` follows the system locale; the other cases are locale
+    /// identifiers themselves, so one `detect` call covers all four.
+    private static func resolve(_ mode: LanguageMode) -> ResolvedLanguage {
+        .detect(from: mode == .auto ? Locale.preferredLanguages.first : mode.rawValue)
     }
-
-    /// The UI strings for the effective language.
-    var l10n: L10n { .strings(for: effectiveLanguage) }
 
     /// Empty while either input is empty, otherwise the flower password for
     /// (password, prefix + key + suffix, length). Cheap enough to recompute
@@ -117,7 +123,6 @@ final class AppState {
     }
 
     func requestFocus() {
-        focusField = password.isEmpty ? .password : .key
         focusToken += 1
     }
 

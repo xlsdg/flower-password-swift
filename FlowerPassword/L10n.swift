@@ -58,6 +58,20 @@ struct L10n: Sendable {
     let ok: String
     let cancel: String
 
+    // Update failure details — one per SelfUpdater.UpdateError case,
+    // rendered by UpdateChecker.
+    let updateFailureTranslocated: String
+    let updateFailureNotWritable: @Sendable (_ directory: String) -> String
+    let updateFailureUnsafeVolume: @Sendable (_ directory: String) -> String
+    /// Also reported for the release-manifest request, so the wording must
+    /// not assume the archive download.
+    let updateFailureHTTPStatus: @Sendable (_ status: Int) -> String
+    let updateFailureTooLarge: @Sendable (_ bytes: Int, _ limit: Int) -> String
+    let updateFailureInvalidSignature: String
+    let updateFailureExtraction: @Sendable (_ status: Int32) -> String
+    let updateFailureAppMissing: String
+    let updateFailureWrongBundle: @Sendable (_ reason: String) -> String
+
     static func strings(for language: ResolvedLanguage) -> L10n {
         switch language {
         case .zhCN: .zhCN
@@ -129,7 +143,16 @@ struct L10n: Sendable {
         updateNoUpdateMessage: "您正在使用最新版本。",
         updateErrorMessage: "检查更新失败。",
         ok: "确定",
-        cancel: "取消"
+        cancel: "取消",
+        updateFailureTranslocated: "应用正在从隔离路径运行。请将 FlowerPassword.app 移动到「应用程序」文件夹后重试。",
+        updateFailureNotWritable: { "没有权限替换 \($0) 中的应用。" },
+        updateFailureUnsafeVolume: { "\($0) 所在的宗卷忽略文件归属权,在此处原地更新并不安全。" },
+        updateFailureHTTPStatus: { "请求失败,HTTP 状态码 \($0)。" },
+        updateFailureTooLarge: { "下载内容为 \($0) 字节,超出 \($1) 字节的上限。" },
+        updateFailureInvalidSignature: "更新包未通过签名校验,文件可能已损坏或被篡改。",
+        updateFailureExtraction: { "无法解压更新包(ditto 退出码 \($0))。" },
+        updateFailureAppMissing: "更新包中没有找到应用程序。",
+        updateFailureWrongBundle: { "下载的应用未通过校验:\($0)。" }
     )
 
     static let zhTW = L10n(
@@ -178,7 +201,16 @@ struct L10n: Sendable {
         updateNoUpdateMessage: "您正在使用最新版本。",
         updateErrorMessage: "檢查更新失敗。",
         ok: "確定",
-        cancel: "取消"
+        cancel: "取消",
+        updateFailureTranslocated: "應用程式正在從隔離路徑執行。請將 FlowerPassword.app 移動到「應用程式」資料夾後重試。",
+        updateFailureNotWritable: { "沒有權限替換 \($0) 中的應用程式。" },
+        updateFailureUnsafeVolume: { "\($0) 所在的儲存空間忽略檔案擁有權,在此處原地更新並不安全。" },
+        updateFailureHTTPStatus: { "請求失敗,HTTP 狀態碼 \($0)。" },
+        updateFailureTooLarge: { "下載內容為 \($0) 位元組,超出 \($1) 位元組的上限。" },
+        updateFailureInvalidSignature: "更新包未通過簽章驗證,檔案可能已損毀或遭竄改。",
+        updateFailureExtraction: { "無法解壓縮更新包(ditto 退出碼 \($0))。" },
+        updateFailureAppMissing: "更新包中找不到應用程式。",
+        updateFailureWrongBundle: { "下載的應用程式未通過驗證:\($0)。" }
     )
 
     static let enUS = L10n(
@@ -231,6 +263,19 @@ struct L10n: Sendable {
         updateNoUpdateMessage: "You are using the latest version.",
         updateErrorMessage: "Failed to check for updates.",
         ok: "OK",
-        cancel: "Cancel"
+        cancel: "Cancel",
+        updateFailureTranslocated:
+            "The app is running from a translocated path. Move FlowerPassword.app to /Applications and try again.",
+        updateFailureNotWritable: { "No permission to replace the app in \($0)." },
+        updateFailureUnsafeVolume: {
+            "The volume holding \($0) ignores file ownership, so in-place updates are unsafe there."
+        },
+        updateFailureHTTPStatus: { "Request failed with HTTP \($0)." },
+        updateFailureTooLarge: { "The download is \($0) bytes, above the \($1)-byte limit." },
+        updateFailureInvalidSignature:
+            "The update failed signature verification; the download may be corrupted or tampered with.",
+        updateFailureExtraction: { "Could not extract the update archive (ditto exited with \($0))." },
+        updateFailureAppMissing: "The update archive does not contain an app bundle.",
+        updateFailureWrongBundle: { "The downloaded app failed validation: \($0)." }
     )
 }

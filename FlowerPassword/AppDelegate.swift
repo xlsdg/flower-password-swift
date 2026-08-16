@@ -4,7 +4,6 @@ import FlowerPasswordCore
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
-    private var state: AppState!
     private var delivery: PasswordDelivery!
     private var panelController: PanelController!
     private var statusItemController: StatusItemController!
@@ -13,12 +12,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         let state = AppState()
-        self.state = state
         state.applyAppearance()
 
-        let clipboard = ClipboardService()
-        let autoTypeService = AutoTypeService()
-        delivery = PasswordDelivery(state: state, autoType: autoTypeService, clipboard: clipboard)
+        delivery = PasswordDelivery(state: state)
         panelController = PanelController(state: state, delivery: delivery)
         hotkeyManager = HotkeyManager()
         updateChecker = UpdateChecker(state: state)

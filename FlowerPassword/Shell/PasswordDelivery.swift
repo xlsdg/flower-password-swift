@@ -13,10 +13,10 @@ final class PasswordDelivery {
     private let autoType: AutoTypeService
     private let clipboard: ClipboardService
 
-    init(state: AppState, autoType: AutoTypeService, clipboard: ClipboardService) {
+    init(state: AppState) {
         self.state = state
-        self.autoType = autoType
-        self.clipboard = clipboard
+        self.autoType = AutoTypeService()
+        self.clipboard = ClipboardService()
     }
 
     /// Auto-type when the user-facing setting is on AND Accessibility trust

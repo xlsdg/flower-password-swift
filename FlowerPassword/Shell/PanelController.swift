@@ -7,7 +7,7 @@ import FlowerPasswordCore
 /// positions it below the status item or at the mouse cursor, and hides it
 /// as soon as it stops being the key window.
 @MainActor
-final class PanelController: NSObject {
+final class PanelController: NSObject, NSWindowDelegate {
     private let panel: FloatingPanel
     private let state: AppState
     private let delivery: PasswordDelivery
@@ -56,12 +56,7 @@ final class PanelController: NSObject {
         panel.onCancel = { [weak self] in
             self?.hide()
         }
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(panelDidResignKey(_:)),
-            name: NSWindow.didResignKeyNotification,
-            object: panel
-        )
+        panel.delegate = self
     }
 
     /// Horizontally centered under the status item, flush with the bottom
@@ -106,7 +101,6 @@ final class PanelController: NSObject {
 
     private func show(topLeft: NSPoint, on screen: NSScreen?) {
         delivery.capturePreviousApp()
-        prefillKeyFromClipboard()
         var point = topLeft
         if let visible = screen?.visibleFrame {
             // Push inside the right/bottom edges first; the left/top clamps
@@ -121,11 +115,11 @@ final class PanelController: NSObject {
         // keeps text-field focus and secure input reliable.
         NSApp.activate(ignoringOtherApps: true)
         panel.makeKeyAndOrderFront(nil)
+        // After ordering front: the first prefill of a session may block on
+        // the Public Suffix List still parsing, and that must not delay the
+        // panel appearing.
+        prefillKeyFromClipboard()
         state.requestFocus()
-    }
-
-    @objc private func panelDidResignKey(_ notification: Notification) {
-        hide()
     }
 
     /// On every show, if the clipboard holds an absolute URL whose host has
@@ -137,5 +131,10 @@ final class PanelController: NSObject {
             label != state.key
         else { return }
         state.key = label
+    }
+
+    /// The panel hides as soon as it stops being the key window.
+    func windowDidResignKey(_ notification: Notification) {
+        hide()
     }
 }

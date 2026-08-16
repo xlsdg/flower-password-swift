@@ -46,19 +46,39 @@ final class UpdateChecker {
                             expectedVersion: latest
                         )
                     } catch {
-                        if Dialogs.updateInstallFailed(l10n, detail: error.localizedDescription) {
+                        if Dialogs.updateInstallFailed(l10n, detail: Self.detail(of: error, l10n)) {
                             NSWorkspace.shared.open(release.pageURL)
                         }
                     }
 
-                case .manualOnly(let pageURL):
+                case .manualOnly:
                     if Dialogs.updateAvailableManual(l10n, current: current, latest: latest) {
-                        NSWorkspace.shared.open(pageURL)
+                        NSWorkspace.shared.open(release.pageURL)
                     }
                 }
             } catch {
-                Dialogs.updateError(l10n, detail: error.localizedDescription)
+                Dialogs.updateError(l10n, detail: Self.detail(of: error, l10n))
             }
+        }
+    }
+
+    /// The alert body for a failure. Updater errors carry no prose of their
+    /// own, so they are rendered here; anything else (URLSession, JSON
+    /// decoding) already has a system-localized description.
+    private static func detail(of error: Error, _ l10n: L10n) -> String {
+        guard let error = error as? SelfUpdater.UpdateError else {
+            return error.localizedDescription
+        }
+        switch error {
+        case .translocated: return l10n.updateFailureTranslocated
+        case .notWritable(let directory): return l10n.updateFailureNotWritable(directory)
+        case .volumeIgnoresOwnership(let directory): return l10n.updateFailureUnsafeVolume(directory)
+        case .httpStatus(let status): return l10n.updateFailureHTTPStatus(status)
+        case .downloadTooLarge(let bytes, let limit): return l10n.updateFailureTooLarge(bytes, limit)
+        case .invalidSignature: return l10n.updateFailureInvalidSignature
+        case .extractionFailed(let status): return l10n.updateFailureExtraction(status)
+        case .appMissingFromArchive: return l10n.updateFailureAppMissing
+        case .wrongBundle(let reason): return l10n.updateFailureWrongBundle(reason)
         }
     }
 
