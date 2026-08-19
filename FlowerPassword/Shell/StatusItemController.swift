@@ -142,7 +142,9 @@ final class StatusItemController: NSObject {
     }
 
     /// The new choice is registered before it is persisted; on failure the
-    /// previous shortcut is restored, so a working hotkey is never lost.
+    /// previous shortcut is restored. Restoring can itself fail (the old
+    /// shortcut may have been taken in the meantime), in which case the
+    /// user is left with no hotkey and told so, rather than left guessing.
     private func changeShortcut(to option: ShortcutOption) {
         guard option != state.shortcut else { return }
         if hotkeys.register(option) {
@@ -153,8 +155,6 @@ final class StatusItemController: NSObject {
             state.l10n,
             shortcut: option.displayName
         )
-        // Restoring can fail too (the shortcut may have been taken in the
-        // meantime); stay silent and the user ends up with no hotkey at all.
         if !hotkeys.register(state.shortcut) {
             Dialogs.shortcutRegistrationFailed(
                 state.l10n,
