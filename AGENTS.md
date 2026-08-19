@@ -4,7 +4,7 @@ This file provides guidance to agentic coding tools when working with code in th
 
 ## Project
 
-A native macOS menu-bar app (Swift, SwiftUI/AppKit, zero third-party dependencies) that derives site-specific passwords from a memory password + distinction code using the Flower Password algorithm. Nothing is stored; the same inputs always yield the same password. Requires macOS 14+ and Xcode 16+.
+A native macOS menu-bar app (Swift, AppKit, zero third-party dependencies) that derives site-specific passwords from a memory password + distinction code using the Flower Password algorithm. Nothing is stored; the same inputs always yield the same password. Requires macOS 14+ and Xcode 16+.
 
 ## Commands
 
@@ -33,4 +33,4 @@ See [docs/architecture.md](docs/architecture.md) for the layer breakdown and the
 
 - **The algorithm is frozen.** `FlowerPasswordCore/Sources/FlowerPasswordCore/FlowerPassword.swift` must match flowerpassword.com byte-for-byte (HMAC-MD5 construction); equivalence is enforced by the 42-case `golden_vectors.json` fixture in the Core tests. Never change the algorithm or the golden vectors.
 - The memory password must never be written to disk, and the app makes no network requests except the manual update check/download against GitHub Releases.
-- Only system frameworks (SwiftUI, AppKit, CryptoKit, Carbon, ServiceManagement) — do not add third-party dependencies.
+- Only system frameworks (AppKit, CryptoKit, Carbon, ServiceManagement, Observation) — do not add third-party dependencies. The UI is intentionally pure AppKit; do not reintroduce SwiftUI.

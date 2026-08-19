@@ -75,7 +75,7 @@ For example, memory password `123456` with distinction code `taobao` yields `Kfd
 
 ## Performance
 
-Native Swift with SwiftUI/AppKit and zero third-party dependencies. Measured on Apple Silicon:
+Native Swift with AppKit and zero third-party dependencies. Measured on Apple Silicon:
 
 - Cold start in about 34 ms
 - About 27 MB resident memory
@@ -96,7 +96,7 @@ swift test --package-path FlowerPasswordCore
 xcodebuild -project FlowerPassword.xcodeproj -scheme FlowerPassword -configuration Release build
 ```
 
-Only system frameworks are used (SwiftUI, AppKit, CryptoKit, Carbon, ServiceManagement).
+Only system frameworks are used (AppKit, CryptoKit, Carbon, ServiceManagement).
 
 ## License
 

@@ -6,7 +6,7 @@ enum PanelMetrics {
     static let cornerRadius: CGFloat = 12
 }
 
-/// Borderless, non-activating floating panel hosting the SwiftUI form:
+/// Borderless, non-activating floating panel hosting the form:
 /// transparent with under-window vibrancy, always on top, and visible on
 /// every Space including fullscreen ones.
 final class FloatingPanel: NSPanel {

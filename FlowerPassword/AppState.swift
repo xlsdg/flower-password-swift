@@ -17,7 +17,7 @@ enum LanguageMode: String, CaseIterable {
     case auto
 }
 
-/// All mutable app state, observed by the SwiftUI form and mutated by the
+/// All mutable app state, observed by the panel form and mutated by the
 /// AppKit shell (status item, panel, hotkey). Main-actor confined.
 @MainActor
 @Observable

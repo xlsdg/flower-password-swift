@@ -3,7 +3,7 @@
 Two layers:
 
 - **`FlowerPasswordCore/`** — a Swift Package (Swift 6 tools) with the pure logic: `FlowerPassword.swift` (the derivation algorithm), `PublicSuffix.swift` (registrable-domain extraction backed by the bundled `public_suffix_list.dat`), `ResolvedLanguage.swift` (system-locale → UI-language mapping), `ReleaseDecision.swift` (maps a decoded GitHub release manifest to an up-to-date/installable/manual-only outcome), and `TextUtilities.swift`. All tests live here; the app target has no test target, so pure, testable logic belongs in Core.
-- **`FlowerPassword/`** — the app target (Xcode project) depending on the Core package. `main.swift` + `AppDelegate.swift` wire up the pieces; `AppState.swift` is the `@Observable` settings/state hub; `UI/` holds the SwiftUI panel; `Shell/` holds the AppKit/system integrations (status item, floating panel, global hotkey via Carbon, clipboard auto-clear, self-updater, launch-at-login, dialogs).
+- **`FlowerPassword/`** — the app target (Xcode project) depending on the Core package. `main.swift` + `AppDelegate.swift` wire up the pieces; `AppState.swift` is the `@Observable` settings/state hub; `UI/` holds the AppKit panel form (observes `AppState` via `withObservationTracking`); `Shell/` holds the AppKit/system integrations (status item, floating panel, global hotkey via Carbon, clipboard auto-clear, self-updater, launch-at-login, dialogs).
 
 ## Key flows spanning multiple files
 

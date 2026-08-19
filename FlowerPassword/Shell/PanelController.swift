@@ -1,9 +1,8 @@
 import AppKit
-import SwiftUI
 
 import FlowerPasswordCore
 
-/// Owns the floating panel: builds the vibrancy + SwiftUI content stack,
+/// Owns the floating panel: builds the vibrancy + form view stack,
 /// positions it below the status item or at the mouse cursor, and hides it
 /// as soon as it stops being the key window.
 @MainActor
@@ -42,14 +41,14 @@ final class PanelController: NSObject, NSWindowDelegate {
         effectView.layer?.cornerCurve = .continuous
         effectView.layer?.masksToBounds = true
 
-        let hostingView = NSHostingView(rootView: ContentView(state: state, actions: actions))
-        hostingView.translatesAutoresizingMaskIntoConstraints = false
-        effectView.addSubview(hostingView)
+        let formView = PanelFormView(state: state, actions: actions)
+        formView.translatesAutoresizingMaskIntoConstraints = false
+        effectView.addSubview(formView)
         NSLayoutConstraint.activate([
-            hostingView.leadingAnchor.constraint(equalTo: effectView.leadingAnchor),
-            hostingView.trailingAnchor.constraint(equalTo: effectView.trailingAnchor),
-            hostingView.topAnchor.constraint(equalTo: effectView.topAnchor),
-            hostingView.bottomAnchor.constraint(equalTo: effectView.bottomAnchor),
+            formView.leadingAnchor.constraint(equalTo: effectView.leadingAnchor),
+            formView.trailingAnchor.constraint(equalTo: effectView.trailingAnchor),
+            formView.topAnchor.constraint(equalTo: effectView.topAnchor),
+            formView.bottomAnchor.constraint(equalTo: effectView.bottomAnchor),
         ])
         panel.contentView = effectView
 

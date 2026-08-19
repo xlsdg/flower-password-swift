@@ -147,11 +147,18 @@ final class StatusItemController: NSObject {
         guard option != state.shortcut else { return }
         if hotkeys.register(option) {
             state.shortcut = option
-        } else {
-            hotkeys.register(state.shortcut)
+            return
+        }
+        Dialogs.shortcutRegistrationFailed(
+            state.l10n,
+            shortcut: option.displayName
+        )
+        // Restoring can fail too (the shortcut may have been taken in the
+        // meantime); stay silent and the user ends up with no hotkey at all.
+        if !hotkeys.register(state.shortcut) {
             Dialogs.shortcutRegistrationFailed(
                 state.l10n,
-                shortcut: option.displayName
+                shortcut: state.shortcut.displayName
             )
         }
     }
