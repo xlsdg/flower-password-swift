@@ -8,6 +8,10 @@ import AppKit
 final class ClipboardService {
     static let clearDelay: TimeInterval = 10
 
+    /// Marks the copied password as concealed (nspasteboard.org convention),
+    /// so cooperating clipboard managers keep it out of their history.
+    private static let concealedType = NSPasteboard.PasteboardType("org.nspasteboard.ConcealedType")
+
     private var pendingClear: DispatchWorkItem?
     private var ownedChangeCount = -1
 
@@ -17,6 +21,7 @@ final class ClipboardService {
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
         pasteboard.setString(text, forType: .string)
+        pasteboard.setString("", forType: Self.concealedType)
         ownedChangeCount = pasteboard.changeCount
 
         let work = DispatchWorkItem { [weak self] in
