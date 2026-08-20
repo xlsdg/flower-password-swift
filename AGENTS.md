@@ -29,6 +29,8 @@ Verification: run `swift test --package-path FlowerPasswordCore` before committi
 
 See [docs/architecture.md](docs/architecture.md) for the layer breakdown and the cross-file flows (localization, self-update chain, releasing, clipboard → distinction code).
 
+See [docs/conventions.md](docs/conventions.md) for how to add to it: layering rules, style, the checklist for a new persisted setting, test/commit expectations.
+
 ## Constraints
 
 - **The algorithm is frozen.** `FlowerPasswordCore/Sources/FlowerPasswordCore/FlowerPassword.swift` must match flowerpassword.com byte-for-byte (HMAC-MD5 construction); equivalence is enforced by the 42-case `golden_vectors.json` fixture in the Core tests. Never change the algorithm or the golden vectors.
