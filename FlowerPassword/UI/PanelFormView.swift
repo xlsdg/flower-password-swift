@@ -164,7 +164,7 @@ final class PanelFormView: NSView, NSTextFieldDelegate {
     /// The single refresh path: strings, colors, field values, focus, and
     /// geometry all update here, for the current theme and language.
     private func render() {
-        let palette = Palette.palette(for: effectiveAppearance)
+        let palette = Palette.resolve(for: effectiveAppearance)
         let l10n = state.l10n
 
         layer?.backgroundColor = palette.windowTint.cgColor

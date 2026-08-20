@@ -51,11 +51,6 @@ public enum FlowerPassword {
             for: Data(message.utf8),
             using: key
         )
-        var hex = String()
-        hex.reserveCapacity(32)
-        for byte in mac {
-            hex += String(format: "%02x", byte)
-        }
-        return hex
+        return mac.map { String(format: "%02x", $0) }.joined()
     }
 }

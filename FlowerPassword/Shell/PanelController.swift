@@ -87,8 +87,7 @@ final class PanelController: NSObject, NSWindowDelegate {
     /// the screen under the cursor.
     func showAtCursor() {
         let mouse = NSEvent.mouseLocation
-        let screen =
-            NSScreen.screens.first { NSMouseInRect(mouse, $0.frame, false) } ?? NSScreen.main
+        let screen = NSScreen.screens.first { $0.frame.contains(mouse) } ?? NSScreen.main
         show(topLeft: mouse, on: screen)
     }
 

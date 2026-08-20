@@ -13,7 +13,7 @@ struct Palette {
     let buttonText: NSColor
     let link: NSColor
 
-    static func palette(for appearance: NSAppearance) -> Palette {
+    static func resolve(for appearance: NSAppearance) -> Palette {
         appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua ? .dark : .light
     }
 

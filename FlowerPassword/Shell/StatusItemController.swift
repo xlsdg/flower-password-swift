@@ -12,7 +12,10 @@ final class StatusItemController: NSObject {
     private let updates: UpdateChecker
     private let delivery: PasswordDelivery
 
-    init(state: AppState, panels: PanelController, hotkeys: HotkeyManager, updates: UpdateChecker, delivery: PasswordDelivery) {
+    init(
+        state: AppState, panels: PanelController, hotkeys: HotkeyManager,
+        updates: UpdateChecker, delivery: PasswordDelivery
+    ) {
         self.state = state
         self.panels = panels
         self.hotkeys = hotkeys
