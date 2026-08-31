@@ -36,10 +36,24 @@ final class PanelController: NSObject, NSWindowDelegate {
         effectView.material = .underWindowBackground
         effectView.blendingMode = .behindWindow
         effectView.state = .active
-        effectView.wantsLayer = true
-        effectView.layer?.cornerRadius = PanelMetrics.cornerRadius
-        effectView.layer?.cornerCurve = .continuous
-        effectView.layer?.masksToBounds = true
+
+        // Corner clipping must live on a plain container: an effectView's
+        // backdrop is a private sublayer that ignores its own layer's
+        // cornerRadius, leaving pale square nubs poking past the rounded mask.
+        let container = NSView()
+        container.wantsLayer = true
+        container.layer?.cornerRadius = PanelMetrics.cornerRadius
+        container.layer?.cornerCurve = .continuous
+        container.layer?.masksToBounds = true
+
+        effectView.translatesAutoresizingMaskIntoConstraints = false
+        container.addSubview(effectView)
+        NSLayoutConstraint.activate([
+            effectView.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            effectView.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            effectView.topAnchor.constraint(equalTo: container.topAnchor),
+            effectView.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+        ])
 
         let formView = PanelFormView(state: state, actions: actions)
         formView.translatesAutoresizingMaskIntoConstraints = false
@@ -50,7 +64,7 @@ final class PanelController: NSObject, NSWindowDelegate {
             formView.topAnchor.constraint(equalTo: effectView.topAnchor),
             formView.bottomAnchor.constraint(equalTo: effectView.bottomAnchor),
         ])
-        panel.contentView = effectView
+        panel.contentView = container
 
         panel.onCancel = { [weak self] in
             self?.hide()
