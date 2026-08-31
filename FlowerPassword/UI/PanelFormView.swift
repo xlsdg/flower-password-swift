@@ -51,6 +51,12 @@ final class PanelFormView: NSView, NSTextFieldDelegate {
         super.init(
             frame: NSRect(x: 0, y: 0, width: PanelMetrics.width, height: PanelMetrics.height))
         wantsLayer = true
+        // Fills the effectView's full bounds (see PanelController), so it
+        // must mirror the panel's rounded corners or its opaque background
+        // squares off the effectView's masked corners.
+        layer?.cornerRadius = PanelMetrics.cornerRadius
+        layer?.cornerCurve = .continuous
+        layer?.masksToBounds = true
 
         titleLabel.font = .systemFont(ofSize: 22, weight: .bold)
 
