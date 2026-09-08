@@ -70,6 +70,7 @@ final class UpdateChecker {
             return error.localizedDescription
         }
         switch error {
+        case .invalidResponse: return URLError(.badServerResponse).localizedDescription
         case .translocated: return l10n.updateFailureTranslocated
         case .notWritable(let directory): return l10n.updateFailureNotWritable(directory)
         case .volumeIgnoresOwnership(let directory): return l10n.updateFailureUnsafeVolume(directory)
@@ -90,7 +91,7 @@ final class UpdateChecker {
         var request = URLRequest(url: latestReleaseURL)
         request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
         let (data, response) = try await URLSession.shared.data(for: request)
-        try (response as? HTTPURLResponse)?.validateSuccessStatus()
+        try response.validateSuccessStatus()
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
         return try decoder.decode(Release.self, from: data)

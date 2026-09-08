@@ -48,7 +48,7 @@ xattr -dr com.apple.quarantine /Applications/FlowerPassword.app
 
 ### Updates
 
-"Check for Updates" in the menu installs new versions in place: the app downloads the release archive, verifies it against an Ed25519 public key baked into the binary, swaps itself out, and relaunches. In-app updates are not quarantined, so the Gatekeeper approval above is only ever needed once.
+"Check for Updates" in the menu installs new versions in place: the app downloads the release archive, verifies it against an Ed25519 public key bundled with the app, swaps itself out, and relaunches. In-app updates are not quarantined, so the Gatekeeper approval above is only ever needed once.
 
 ## Usage
 

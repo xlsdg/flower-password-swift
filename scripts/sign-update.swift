@@ -6,7 +6,7 @@
 //       Create a new keypair: write the base64 private key to the given
 //       path (mode 0600, never printed) and print the base64 public key.
 //       Store the private key as the ED25519_PRIVATE_KEY repo secret and
-//       embed the public key in SelfUpdater.swift.
+//       save the public key in FlowerPassword/Resources/update-public-key.txt.
 //   sign <file>
 //       Read the base64 private key from the ED25519_PRIVATE_KEY
 //       environment variable and write <file>.sig (base64 signature).
@@ -49,7 +49,15 @@ func run() throws {
             let keyData = Data(
                 base64Encoded: encoded.trimmingCharacters(in: .whitespacesAndNewlines))
         else { fail("ED25519_PRIVATE_KEY must hold the base64 private key") }
+        guard keyData.count == 32 else { fail("Ed25519 private key must contain exactly 32 bytes") }
         let key = try Curve25519.Signing.PrivateKey(rawRepresentation: keyData)
+        let publicKeyURL = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+            .appendingPathComponent("../FlowerPassword/Resources/update-public-key.txt")
+        let expected = try String(contentsOf: publicKeyURL, encoding: .utf8)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        guard key.publicKey.rawRepresentation.base64EncodedString() == expected else {
+            fail("private key does not match the embedded public key")
+        }
         let payload = try Data(contentsOf: URL(fileURLWithPath: arguments[2]))
         let signaturePath = arguments[2] + ".sig"
         try (key.signature(for: payload).base64EncodedString() + "\n")

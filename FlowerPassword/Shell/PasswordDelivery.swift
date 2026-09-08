@@ -30,9 +30,13 @@ final class PasswordDelivery {
     /// trust has been revoked since the menu was last opened, this falls
     /// back to clipboard without prompting.
     func deliver(_ password: String) {
-        if willAutoType {
-            autoType.type(password)
-        } else {
+        guard willAutoType else {
+            clipboard.copy(password)
+            return
+        }
+        if !autoType.type(password, fallback: { [weak self] in
+            self?.clipboard.copy(password)
+        }) {
             clipboard.copy(password)
         }
     }

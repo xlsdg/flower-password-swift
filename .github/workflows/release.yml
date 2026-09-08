@@ -25,10 +25,9 @@ jobs:
         run: |
           ZIP=$(ls dist/*.zip)
           swift scripts/sign-update.swift sign "$ZIP"
-          PUBLIC_KEY=$(sed -n 's/.*publicKeyBase64 = "\([^"]*\)".*/\1/p' \
-            FlowerPassword/Shell/SelfUpdater.swift)
+          PUBLIC_KEY=$(tr -d '[:space:]' < FlowerPassword/Resources/update-public-key.txt)
           if [ -z "$PUBLIC_KEY" ]; then
-            echo "Embedded public key not found in SelfUpdater.swift" >&2
+            echo "Public key not found in FlowerPassword/Resources/update-public-key.txt" >&2
             exit 1
           fi
           swift scripts/sign-update.swift verify "$PUBLIC_KEY" "$ZIP" "$ZIP.sig"

@@ -11,6 +11,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var updateChecker: UpdateChecker!
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // Acknowledge the update helper before anything that can block (modal
+        // dialogs), or a healthy install gets rolled back on timeout.
+        let arguments = CommandLine.arguments
+        if arguments.count == 3, arguments[1] == "--update-ready" {
+            do { try Data().write(to: URL(fileURLWithPath: arguments[2]), options: .atomic) }
+            catch { NSLog("Could not acknowledge update startup: %@", error.localizedDescription) }
+        }
+
         let state = AppState()
         state.applyAppearance()
 

@@ -3,13 +3,16 @@ import CryptoKit
 
 /// Replaces the running app bundle with a downloaded release archive:
 /// verify the Ed25519 signature, extract, swap in place, and relaunch.
-/// Nothing is modified until the swap step, a single replaceItemAt call
-/// that restores the original bundle if the replacement fails.
+/// A detached helper retains the old bundle until the new app acknowledges startup.
 enum SelfUpdater {
     /// Pairs with the ED25519_PRIVATE_KEY repo secret that CI uses to sign
     /// release archives (scripts/sign-update.swift); release.yml refuses to
     /// publish when the two no longer match.
-    private static let publicKeyBase64 = "qf1aoyEllNVxl+neetyWDbL2tx3m1IA89qz/F0iD+7k="
+    private static var publicKeyBase64: String {
+        guard let url = Bundle.main.url(forResource: "update-public-key", withExtension: "txt"),
+              let key = try? String(contentsOf: url, encoding: .utf8) else { return "" }
+        return key.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
 
     /// Carries no prose: the user-facing sentences live in `L10n`, rendered
     /// by `UpdateChecker`, so all three languages stay in one place.
@@ -18,6 +21,7 @@ enum SelfUpdater {
         case translocated
         case notWritable(String)
         case volumeIgnoresOwnership(String)
+        case invalidResponse
         case httpStatus(Int)
         case downloadTooLarge(bytes: Int, limit: Int)
         case invalidSignature
@@ -51,14 +55,13 @@ enum SelfUpdater {
         let staging = try FileManager.default.url(
             for: .itemReplacementDirectory, in: .userDomainMask,
             appropriateFor: bundleURL, create: true)
-        defer { try? FileManager.default.removeItem(at: staging) }
+        var handedOff = false
+        defer { if !handedOff { try? FileManager.default.removeItem(at: staging) } }
 
         let newApp = try extract(archiveData, in: staging)
         try validate(newApp, expectedVersion: expectedVersion)
-        // Replacing the running bundle is safe: the kernel keeps the mapped
-        // binary alive until the process exits.
-        _ = try FileManager.default.replaceItemAt(bundleURL, withItemAt: newApp)
-        await relaunch(bundleURL)
+        try await relaunch(bundleURL, newApp: newApp, staging: staging)
+        handedOff = true
     }
 
     private static func preflight(_ bundleURL: URL) throws {
@@ -89,7 +92,7 @@ enum SelfUpdater {
     private static func fetch(_ url: URL, limit: Int) async throws -> Data {
         let (file, response) = try await URLSession.shared.download(from: url)
         defer { try? FileManager.default.removeItem(at: file) }
-        try (response as? HTTPURLResponse)?.validateSuccessStatus()
+        try response.validateSuccessStatus()
         let bytes = try file.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
         guard bytes <= limit else {
             throw UpdateError.downloadTooLarge(bytes: bytes, limit: limit)
@@ -113,14 +116,33 @@ enum SelfUpdater {
         try archive.write(to: zipFile)
         let unpacked = staging.appendingPathComponent("unpacked", isDirectory: true)
 
-        let status = run("/usr/bin/ditto", ["-xk", zipFile.path, unpacked.path])
+        try FileManager.default.createDirectory(at: unpacked, withIntermediateDirectories: false)
+        // Enforce containment during extraction, not after a traversal could write.
+        // ponytail: sandbox-exec is deprecated; fail closed if unavailable, replace
+        // with a sandboxed extraction helper when macOS removes it.
+        let profile = "(version 1)(allow default)(deny file-write*)(allow file-write* (subpath (param \"DEST\")))"
+        let status = run("/usr/bin/sandbox-exec", [
+            "-D", "DEST=\(unpacked.resolvingSymlinksInPath().path)", "-p", profile,
+            "/usr/bin/ditto", "-xk", zipFile.path, unpacked.path,
+        ])
         guard status == 0 else {
             throw UpdateError.extractionFailed(status)
         }
 
+        let root = unpacked.resolvingSymlinksInPath().path
+        guard let entries = FileManager.default.enumerator(at: unpacked,
+            includingPropertiesForKeys: [.isSymbolicLinkKey]) else {
+            throw UpdateError.appMissingFromArchive
+        }
+        for case let entry as URL in entries {
+            guard entry.resolvingSymlinksInPath().path.hasPrefix(root + "/") else {
+                throw UpdateError.wrongBundle("archive contains an escaping symbolic link")
+            }
+        }
         let contents = try FileManager.default.contentsOfDirectory(
             at: unpacked, includingPropertiesForKeys: nil)
-        guard let app = contents.first(where: { $0.pathExtension == "app" }) else {
+        let apps = contents.filter { $0.pathExtension == "app" }
+        guard apps.count == 1, let app = apps.first else {
             throw UpdateError.appMissingFromArchive
         }
 
@@ -146,6 +168,14 @@ enum SelfUpdater {
         return process.terminationStatus
     }
 
+    private static var currentArchitecture: Int {
+        #if arch(arm64)
+        return NSBundleExecutableArchitectureARM64
+        #else
+        return NSBundleExecutableArchitectureX86_64
+        #endif
+    }
+
     private static func validate(_ app: URL, expectedVersion: String) throws {
         guard let bundle = Bundle(url: app) else {
             throw UpdateError.wrongBundle("unreadable bundle")
@@ -153,6 +183,13 @@ enum SelfUpdater {
         guard bundle.bundleIdentifier == Bundle.main.bundleIdentifier else {
             throw UpdateError.wrongBundle(
                 "unexpected bundle identifier \(bundle.bundleIdentifier ?? "nil")")
+        }
+        guard let executable = bundle.executableURL,
+              FileManager.default.isExecutableFile(atPath: executable.path),
+              let architectures = bundle.executableArchitectures,
+              architectures.contains(NSNumber(value: currentArchitecture)),
+              run("/usr/bin/codesign", ["--verify", "--deep", "--strict", app.path]) == 0 else {
+            throw UpdateError.wrongBundle("missing executable, unsupported architecture, or invalid code signature")
         }
         let version = bundle.shortVersion
         guard version == expectedVersion else {
@@ -162,25 +199,32 @@ enum SelfUpdater {
     }
 
     @MainActor
-    private static func relaunch(_ bundleURL: URL) {
+    private static func relaunch(_ bundleURL: URL, newApp: URL, staging: URL) throws {
+        guard let script = Bundle.main.url(forResource: "install-update", withExtension: "sh"),
+              let executable = Bundle(url: newApp)?.executableURL?.lastPathComponent else {
+            throw UpdateError.wrongBundle("missing update helper or executable")
+        }
+        let helper = staging.appendingPathComponent("install-update.sh")
+        try FileManager.default.copyItem(at: script, to: helper)
         let pid = ProcessInfo.processInfo.processIdentifier
         let waiter = Process()
         waiter.executableURL = URL(fileURLWithPath: "/bin/sh")
         waiter.arguments = [
-            "-c",
-            "while /bin/kill -0 \(pid) 2>/dev/null; do /bin/sleep 0.1; done; /usr/bin/open \"$1\"",
-            "relaunch",
-            bundleURL.path,
+            helper.path, String(pid), bundleURL.path, staging.path, newApp.path, executable,
         ]
-        try? waiter.run()
-        NSApp.terminate(nil)
+        try waiter.run()
+        // Return to install() first so it transfers ownership of staging.
+        DispatchQueue.main.async { NSApp.terminate(nil) }
     }
 }
 
-extension HTTPURLResponse {
+extension URLResponse {
     func validateSuccessStatus() throws {
-        guard (200...299).contains(statusCode) else {
-            throw SelfUpdater.UpdateError.httpStatus(statusCode)
+        guard let response = self as? HTTPURLResponse else {
+            throw SelfUpdater.UpdateError.invalidResponse
+        }
+        guard (200...299).contains(response.statusCode) else {
+            throw SelfUpdater.UpdateError.httpStatus(response.statusCode)
         }
     }
 }
