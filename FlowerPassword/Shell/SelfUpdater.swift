@@ -121,21 +121,31 @@ enum SelfUpdater {
         // ponytail: sandbox-exec is deprecated; fail closed if unavailable, replace
         // with a sandboxed extraction helper when macOS removes it.
         let profile = "(version 1)(allow default)(deny file-write*)(allow file-write* (subpath (param \"DEST\")))"
+        // realpath(3) canonicalizes /var -> /private/var;
+        // resolvingSymlinksInPath does not, and both the sandbox subpath rule
+        // and the prefix check below compare canonical paths.
+        func canonical(_ url: URL) -> String {
+            url.withUnsafeFileSystemRepresentation { ptr in
+                guard let ptr, let real = realpath(ptr, nil) else { return url.path }
+                defer { free(real) }
+                return String(cString: real)
+            }
+        }
+        let root = canonical(unpacked)
         let status = run("/usr/bin/sandbox-exec", [
-            "-D", "DEST=\(unpacked.resolvingSymlinksInPath().path)", "-p", profile,
+            "-D", "DEST=\(root)", "-p", profile,
             "/usr/bin/ditto", "-xk", zipFile.path, unpacked.path,
         ])
         guard status == 0 else {
             throw UpdateError.extractionFailed(status)
         }
 
-        let root = unpacked.resolvingSymlinksInPath().path
         guard let entries = FileManager.default.enumerator(at: unpacked,
             includingPropertiesForKeys: [.isSymbolicLinkKey]) else {
             throw UpdateError.appMissingFromArchive
         }
         for case let entry as URL in entries {
-            guard entry.resolvingSymlinksInPath().path.hasPrefix(root + "/") else {
+            guard canonical(entry).hasPrefix(root + "/") else {
                 throw UpdateError.wrongBundle("archive contains an escaping symbolic link")
             }
         }
