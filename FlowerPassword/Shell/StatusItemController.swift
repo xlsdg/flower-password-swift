@@ -69,7 +69,7 @@ final class StatusItemController: NSObject {
 
     // MARK: - Menu
 
-    /// Show / Theme / Language / auto-launch / shortcut / update / Quit,
+    /// Show / Theme / Language / shortcut / auto-launch / auto-type / update / Quit,
     /// with the pickers as native checkmarked submenus.
     private func buildMenu() -> NSMenu {
         let l10n = state.l10n
@@ -90,6 +90,10 @@ final class StatusItemController: NSObject {
             picker(l10n.menuLanguage, selected: state.language, name: l10n.languageName) { [weak self] mode in
                 self?.state.language = mode
             })
+        menu.addItem(
+            picker(l10n.menuGlobalShortcut, selected: state.shortcut, name: \.displayName) { [weak self] option in
+                self?.changeShortcut(to: option)
+            })
         menu.addItem(.separator())
 
         menu.addItem(
@@ -99,10 +103,6 @@ final class StatusItemController: NSObject {
         menu.addItem(
             ActionMenuItem(title: l10n.menuAutoType, checked: delivery.willAutoType) { [weak self] in
                 self?.delivery.toggleAutoType()
-            })
-        menu.addItem(
-            picker(l10n.menuGlobalShortcut, selected: state.shortcut, name: \.displayName) { [weak self] option in
-                self?.changeShortcut(to: option)
             })
         menu.addItem(
             ActionMenuItem(title: l10n.menuCheckUpdate) { [weak self] in
