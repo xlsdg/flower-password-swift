@@ -22,7 +22,7 @@ final class PanelFormView: NSView, NSTextFieldDelegate {
     private let actions: PanelActions
 
     private let titleLabel = NSTextField(labelWithString: "")
-    private let closeButton = NSButton()
+    private let closeButton = PanelButton()
     private let passwordField = FocusReportingSecureTextField()
     private let keyField = FocusReportingTextField()
     private let prefixField = FocusReportingTextField()
@@ -32,11 +32,11 @@ final class PanelFormView: NSView, NSTextFieldDelegate {
     private let prefixContainer = NSView()
     private let suffixContainer = NSView()
     private let generateButton = HoverButton()
-    private let lengthButton = NSButton()
+    private let lengthButton = PanelButton()
     private let lengthDivider = NSView()
     private let hintPasswordLabel = NSTextField(wrappingLabelWithString: "")
     private let hintKeyLabel = NSTextField(wrappingLabelWithString: "")
-    private let websiteView = NSTextView()
+    private let websiteView = ClickOnlyTextView()
 
     private var focusedField: AppState.FocusField?
     private var isHoveringGenerate = false
@@ -93,16 +93,25 @@ final class PanelFormView: NSView, NSTextFieldDelegate {
             addSubview(view)
         }
 
-        passwordField.nextKeyView = keyField
-        keyField.nextKeyView = prefixField
-        prefixField.nextKeyView = suffixField
-        suffixField.nextKeyView = passwordField
+        let tabOrder: [NSView] = [
+            passwordField, keyField, generateButton, lengthButton, prefixField, suffixField, closeButton,
+        ]
+        for (view, next) in zip(tabOrder, tabOrder.dropFirst() + [passwordField]) {
+            view.nextKeyView = next
+        }
 
         observeState()
     }
 
     @available(*, unavailable)
     required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
+
+    // A window without an initialFirstResponder rebuilds the key view loop on
+    // first display, discarding the explicit loop above.
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        window?.initialFirstResponder = passwordField
+    }
 
     // Top-down manual layout; a fixed-size panel needs no Auto Layout.
     override var isFlipped: Bool { true }
@@ -115,7 +124,7 @@ final class PanelFormView: NSView, NSTextFieldDelegate {
     private static let leftCorners: CACornerMask = [.layerMinXMinYCorner, .layerMinXMaxYCorner]
     private static let rightCorners: CACornerMask = [.layerMaxXMinYCorner, .layerMaxXMaxYCorner]
 
-    private func configureButton(_ button: NSButton, action: Selector, cornerMask: CACornerMask? = nil) {
+    private func configureButton(_ button: PanelButton, action: Selector, cornerMask: CACornerMask? = nil) {
         button.isBordered = false
         button.wantsLayer = true
         if let cornerMask {
