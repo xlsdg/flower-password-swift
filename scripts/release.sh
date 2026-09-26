@@ -12,6 +12,16 @@ xcodebuild -project FlowerPassword.xcodeproj -scheme FlowerPassword \
   -configuration Release -derivedDataPath build \
   ARCHS="arm64 x86_64" ONLY_ACTIVE_ARCH=NO clean build
 
+# A fixed certificate keeps the designated requirement stable across builds,
+# so Accessibility grants survive updates. Without SIGNING_IDENTITY the
+# ad-hoc signature from xcodebuild stays (local builds).
+if [ -n "${SIGNING_IDENTITY:-}" ]; then
+  codesign --force --options runtime --timestamp=none \
+    ${SIGNING_KEYCHAIN:+--keychain "$SIGNING_KEYCHAIN"} \
+    --sign "$SIGNING_IDENTITY" "$APP"
+fi
+codesign --verify --deep --strict "$APP"
+
 # Read the version from the built product, not the pbxproj: the archive name
 # must match what the shipped app reports at runtime, because
 # SelfUpdater.validate compares the two during in-place updates.
