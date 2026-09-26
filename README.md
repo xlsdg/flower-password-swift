@@ -83,7 +83,7 @@ Native Swift with AppKit and zero third-party dependencies. Measured on Apple Si
 
 ## Build from source
 
-Requires macOS 14+ and Xcode 16+:
+Requires macOS 14+ and Xcode 26+:
 
 ```bash
 git clone https://github.com/xlsdg/flower-password-swift.git
