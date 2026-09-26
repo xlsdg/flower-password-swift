@@ -236,10 +236,9 @@ final class PanelFormView: NSView, NSTextFieldDelegate {
         }
         // A focused prefix must draw its highlighted border over the suffix
         // in the -1pt overlap (the suffix wins otherwise, being added later).
-        addSubview(
-            prefixContainer,
-            positioned: focusedField == .prefix ? .above : .below,
-            relativeTo: suffixContainer)
+        // zPosition only reorders compositing: re-inserting the view instead
+        // would reset the caret of a field being typed into.
+        prefixContainer.layer?.zPosition = focusedField == .prefix ? 1 : 0
 
         generateButton.attributedTitle = Self.buttonTitle(
             generateButtonLabel(l10n), color: palette.buttonText)
@@ -395,12 +394,14 @@ final class PanelFormView: NSView, NSTextFieldDelegate {
 
         let labelSize = websiteLabel.cell?.cellSize ?? .zero
         let linkSize = websiteButton.cell?.cellSize ?? .zero
-        // The button cell pads its title; pull it left so the link sits where inline text would.
-        let linkPadding = floor((linkSize.width - websiteButton.attributedTitle.size().width) / 2)
+        // Both cells pad their text; align the link's title with where the
+        // label's text ends, as if the two were one line of inline text.
+        let labelTextEnd = (labelSize.width + websiteLabel.attributedStringValue.size().width) / 2
+        let linkPadding = (linkSize.width - websiteButton.attributedTitle.size().width) / 2
+        let linkX = ceil(labelTextEnd - linkPadding)
         websiteLabel.frame = NSRect(x: pad, y: y, width: ceil(labelSize.width), height: ceil(labelSize.height))
         websiteButton.frame = NSRect(
-            x: pad + ceil(labelSize.width) - linkPadding, y: y,
-            width: min(ceil(linkSize.width), width - ceil(labelSize.width) + linkPadding),
+            x: pad + linkX, y: y, width: min(ceil(linkSize.width), width - linkX),
             height: ceil(labelSize.height))
     }
 
