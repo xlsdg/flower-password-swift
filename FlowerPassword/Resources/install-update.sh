@@ -12,6 +12,13 @@ ready="$staging/ready"
 
 restore() {
     /usr/bin/pkill -f "$app/Contents/MacOS/$executable" 2>/dev/null || true
+    # A still-exiting instance would make `open` below activate it instead of
+    # launching the restored bundle.
+    for attempt in $(/usr/bin/seq 1 50); do
+        /usr/bin/pgrep -f "$app/Contents/MacOS/$executable" >/dev/null || break
+        /bin/sleep 0.1
+    done
+    /usr/bin/pkill -9 -f "$app/Contents/MacOS/$executable" 2>/dev/null || true
     /bin/mv "$app" "$staging/failed.app"
     /bin/mv "$backup" "$app"
     /usr/bin/open "$app"
