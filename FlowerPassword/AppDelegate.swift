@@ -14,7 +14,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         installEditMenu()
 
         // Acknowledge the update helper before anything that can block (modal
-        // dialogs), or a healthy install gets rolled back on timeout.
+        // dialogs), or a healthy install gets rolled back on timeout. Every
+        // release must keep this handshake (see docs/architecture.md).
         let arguments = CommandLine.arguments
         if arguments.count == 3, arguments[1] == "--update-ready" {
             do { try Data().write(to: URL(fileURLWithPath: arguments[2]), options: .atomic) }
