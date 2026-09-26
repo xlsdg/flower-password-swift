@@ -5,9 +5,9 @@ import Observation
 import FlowerPasswordCore
 
 enum ThemeMode: String, CaseIterable {
+    case auto
     case light
     case dark
-    case auto
 
     var title: String {
         switch self {
