@@ -11,6 +11,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var updateChecker: UpdateChecker!
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        installEditMenu()
+
         // Acknowledge the update helper before anything that can block (modal
         // dialogs), or a healthy install gets rolled back on timeout.
         let arguments = CommandLine.arguments
@@ -54,5 +56,33 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationWillTerminate(_ notification: Notification) {
         delivery?.clearClipboardIfOwned()
+    }
+
+    /// A minimal, invisible main menu with just the Edit menu. The app is
+    /// menu-bar-only (no Dock icon), so this menu is never shown, but field
+    /// editors (of NSTextField / NSSecureTextField) rely on the responder chain
+    /// finding a menu item for standard editing commands to validate against.
+    private func installEditMenu() {
+        let mainMenu = NSMenu()
+        let editMenu = NSMenu(title: "Edit")
+        let editItem = NSMenuItem()
+        editItem.submenu = editMenu
+
+        let items: [(String, Selector, String)] = [
+            ("Undo", Selector(("undo:")), "z"),
+            ("Redo", Selector(("redo:")), "Z"),
+            ("Cut", #selector(NSText.cut(_:)), "x"),
+            ("Copy", #selector(NSText.copy(_:)), "c"),
+            ("Paste", #selector(NSText.paste(_:)), "v"),
+            ("Select All", #selector(NSText.selectAll(_:)), "a"),
+        ]
+        for (title, action, key) in items {
+            let item = NSMenuItem(title: title, action: action, keyEquivalent: key)
+            item.target = nil // route through responder chain
+            editMenu.addItem(item)
+        }
+
+        mainMenu.addItem(editItem)
+        NSApp.mainMenu = mainMenu
     }
 }
