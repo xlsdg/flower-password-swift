@@ -20,8 +20,9 @@ struct Palette {
     static let light = Palette(
         windowTint: NSColor(hex: 0xFFFFFF, opacity: 0.72),
         textPrimary: NSColor(hex: 0x168BC3),
-        // Keeps 4.5:1 (WCAG AA) even where the translucent panel dims to light gray.
-        textSecondary: NSColor(hex: 0x666666),
+        // Well past 4.5:1 (WCAG AA): anti-aliased 12pt text on 1x displays
+        // renders lighter than its nominal color.
+        textSecondary: NSColor(hex: 0x555555),
         border: NSColor(hex: 0xCCCCCC),
         inputBackground: NSColor(hex: 0xFFFFFF),
         inputText: NSColor(hex: 0x333333),
@@ -34,7 +35,7 @@ struct Palette {
     static let dark = Palette(
         windowTint: NSColor(hex: 0x1E1E1E, opacity: 0.72),
         textPrimary: NSColor(hex: 0x4DB8E8),
-        textSecondary: NSColor(hex: 0xAAAAAA),
+        textSecondary: NSColor(hex: 0xBBBBBB),
         border: NSColor(hex: 0x444444),
         inputBackground: NSColor(hex: 0x2D2D2D),
         inputText: NSColor(hex: 0xE0E0E0),
