@@ -113,13 +113,10 @@ final class AppState {
         .detect(from: mode == .auto ? Locale.preferredLanguages.first : mode.rawValue)
     }
 
-    /// Empty while either input is empty, otherwise the flower password for
-    /// (password, prefix + key + suffix, length). Cheap enough to recompute
-    /// on every keystroke — three HMAC-MD5 of tiny inputs.
+    /// Cheap enough to recompute on every keystroke — three HMAC-MD5 of tiny inputs.
     var generatedCode: String {
-        guard !password.isEmpty, !key.isEmpty else { return "" }
-        let distinguishCode = prefix + key + suffix
-        return (try? FlowerPassword.code(password: password, key: distinguishCode, length: passwordLength)) ?? ""
+        TextUtilities.generatedCode(
+            password: password, key: key, prefix: prefix, suffix: suffix, length: passwordLength)
     }
 
     func requestFocus() {
