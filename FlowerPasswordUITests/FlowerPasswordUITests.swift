@@ -240,7 +240,7 @@ final class FlowerPasswordUITests: XCTestCase {
     /// - a Touch Bar element AppKit exposes for the menu bar, present before any window opens;
     /// - the 22pt bold brand-blue title, which as large text meets WCAG AA's 3:1.
     private static func ignoreKnownIssue(_ issue: XCUIAccessibilityAuditIssue) -> Bool {
-        guard let element = issue.element else { return true }
+        guard let element = issue.element else { return [.parentChild, .contrast].contains(issue.auditType) }
         if element.elementType == .touchBar { return true }
         return issue.auditType == .contrast && element.value as? String == "Flower Password"
     }
