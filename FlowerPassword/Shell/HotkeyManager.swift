@@ -31,6 +31,8 @@ enum ShortcutOption: String, CaseIterable {
 /// Global hotkey via Carbon RegisterEventHotKey — unlike CGEventTap or
 /// NSEvent global monitors it needs no accessibility/input-monitoring
 /// permission, so the shortcut works on first launch without any prompts.
+/// Lives for the whole process, so its Carbon registrations are never torn down.
+@MainActor
 final class HotkeyManager {
     var handler: (() -> Void)?
 
@@ -38,15 +40,6 @@ final class HotkeyManager {
     private var eventHandlerRef: EventHandlerRef?
 
     private static let signature: OSType = 0x46505744  // "FPWD"
-
-    deinit {
-        if let hotKeyRef {
-            UnregisterEventHotKey(hotKeyRef)
-        }
-        if let eventHandlerRef {
-            RemoveEventHandler(eventHandlerRef)
-        }
-    }
 
     @discardableResult
     func register(_ shortcut: ShortcutOption) -> Bool {

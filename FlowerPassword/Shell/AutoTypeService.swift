@@ -26,7 +26,8 @@ final class AutoTypeService {
     /// Whether the process is trusted for Accessibility. Pass `prompt: true`
     /// to have the system show its own permission dialog when untrusted.
     static func isTrusted(prompt: Bool) -> Bool {
-        let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue(): prompt] as CFDictionary
+        // The literal value of kAXTrustedCheckOptionPrompt, a mutable C global Swift 6 rejects.
+        let options = ["AXTrustedCheckOptionPrompt": prompt] as CFDictionary
         return AXIsProcessTrustedWithOptions(options)
     }
 
