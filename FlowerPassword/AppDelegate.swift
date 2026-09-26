@@ -22,7 +22,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             catch { NSLog("Could not acknowledge update startup: %@", error.localizedDescription) }
         }
 
-        let state = AppState()
+        // UI tests run against a private defaults suite, wiped unless
+        // --keep-defaults relaunches to check persistence, and skip the global
+        // hotkey, which an installed copy of the app may already hold.
+        let uiTesting = arguments.contains("--ui-testing")
+        let defaults = uiTesting ? Self.uiTestingDefaults(reset: !arguments.contains("--keep-defaults")) : .standard
+
+        let state = AppState(defaults: defaults)
         state.applyAppearance()
 
         delivery = PasswordDelivery(state: state)
@@ -40,7 +46,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         hotkeyManager.handler = { [weak self] in
             self?.panelController.showAtCursor()
         }
-        if !hotkeyManager.register(state.shortcut) {
+        if !uiTesting, !hotkeyManager.register(state.shortcut) {
             Dialogs.shortcutRegistrationFailed(state.l10n, shortcut: state.shortcut.displayName)
         }
 
@@ -49,6 +55,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         Task.detached(priority: .utility) {
             _ = PublicSuffix.shared
         }
+    }
+
+    private static func uiTestingDefaults(reset: Bool) -> UserDefaults {
+        let suite = "org.xlsdg.flowerpassword.uitests"
+        let defaults = UserDefaults(suiteName: suite)!
+        if reset { defaults.removePersistentDomain(forName: suite) }
+        return defaults
     }
 
     func applicationSupportsSecureRestorableState(_ app: NSApplication) -> Bool {
@@ -66,7 +79,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func installEditMenu() {
         let mainMenu = NSMenu()
         let editMenu = NSMenu(title: "Edit")
-        let editItem = NSMenuItem()
+        let editItem = NSMenuItem(title: "Edit", action: nil, keyEquivalent: "")
         editItem.submenu = editMenu
 
         let items: [(String, Selector, String)] = [

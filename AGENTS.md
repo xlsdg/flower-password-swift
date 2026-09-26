@@ -9,8 +9,13 @@ A native macOS menu-bar app (Swift, AppKit, zero third-party dependencies) that 
 ## Commands
 
 ```bash
-# Run the algorithm test suite (the only tests in the repo)
+# Run the algorithm test suite
 swift test --package-path FlowerPasswordCore
+
+# Run the end-to-end UI tests (drives the real app: takes over mouse and clipboard, ~4 min)
+xcodebuild test -project FlowerPassword.xcodeproj -scheme FlowerPassword
+xcodebuild test -project FlowerPassword.xcodeproj -scheme FlowerPassword \
+  -only-testing:FlowerPasswordUITests/FlowerPasswordUITests/testEscClosesPanel
 
 # Run a single test (swift-testing: filter by @Suite type or @Test function name)
 swift test --package-path FlowerPasswordCore --filter PublicSuffixTests
@@ -19,11 +24,11 @@ swift test --package-path FlowerPasswordCore --filter urlText
 # Build the app
 xcodebuild -project FlowerPassword.xcodeproj -scheme FlowerPassword -configuration Release build
 
-# Full release build: tests + universal (arm64/x86_64) build + zip into dist/
+# Full release build: Core + UI tests + universal (arm64/x86_64) build + zip into dist/
 ./scripts/release.sh
 ```
 
-Verification: run `swift test --package-path FlowerPasswordCore` before committing anything that touches `FlowerPasswordCore/`.
+Verification: run `swift test --package-path FlowerPasswordCore` before committing anything that touches `FlowerPasswordCore/`, and the UI tests before committing anything that touches `FlowerPassword/`.
 
 ## Architecture
 

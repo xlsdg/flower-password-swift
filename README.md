@@ -92,6 +92,9 @@ cd flower-password-swift
 # Run the algorithm test suite
 swift test --package-path FlowerPasswordCore
 
+# Run the end-to-end UI tests (drives the real app for a few minutes)
+xcodebuild test -project FlowerPassword.xcodeproj -scheme FlowerPassword
+
 # Build the app
 xcodebuild -project FlowerPassword.xcodeproj -scheme FlowerPassword -configuration Release build
 ```

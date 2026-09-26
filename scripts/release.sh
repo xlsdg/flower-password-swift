@@ -7,6 +7,9 @@ cd "$(dirname "$0")/.."
 APP="build/Build/Products/Release/FlowerPassword.app"
 
 swift test --package-path FlowerPasswordCore
+# End-to-end UI tests; they need a logged-in GUI session and take over the
+# mouse and clipboard for a few minutes.
+xcodebuild test -project FlowerPassword.xcodeproj -scheme FlowerPassword -derivedDataPath build/test
 
 xcodebuild -project FlowerPassword.xcodeproj -scheme FlowerPassword \
   -configuration Release -derivedDataPath build \

@@ -6,7 +6,7 @@ Practices for iterating on this codebase. [architecture.md](architecture.md) des
 
 Before writing code, decide which layer it belongs in (see architecture.md for the full picture):
 
-- **Pure/testable logic → `FlowerPasswordCore/`.** If it doesn't touch AppKit/UserDefaults/the filesystem, it belongs in Core and gets a test. The app target has no test target, so anything left in `FlowerPassword/` is untested by construction.
+- **Pure/testable logic → `FlowerPasswordCore/`.** If it doesn't touch AppKit/UserDefaults/the filesystem, it belongs in Core and gets a unit test. The app target is covered only end to end by the UI tests, so logic left in `FlowerPassword/` is tested only through the UI.
 - **System integration → `Shell/`.** Status item, panel window, hotkey, clipboard, self-update, launch-at-login — anything wrapping an AppKit/Carbon/ServiceManagement API.
 - **View code → `UI/`.** Stays a thin observer of `AppState`; no business logic.
 
@@ -37,7 +37,15 @@ Follow the existing `AppState` pattern (`FlowerPassword/AppState.swift`):
 
 - New Core logic ships with a test in `FlowerPasswordCoreTests/`, following the existing `@Suite`/`@Test` (swift-testing) style of the sibling files.
 - Run `swift test --package-path FlowerPasswordCore` before committing anything under `FlowerPasswordCore/`.
-- The `FlowerPassword/` app target has no tests; keep logic that needs testing in Core rather than adding app-target tests as a workaround.
+- User-visible behavior of the app (panel, menu, clipboard, settings) gets a test in `FlowerPasswordUITests/`. Keep logic in Core with unit tests rather than testing it through the UI.
+- Run `xcodebuild test -project FlowerPassword.xcodeproj -scheme FlowerPassword` before committing anything under `FlowerPassword/`.
+
+## Accessibility
+
+- Every control needs a VoiceOver name: set `setAccessibilityLabel` when the visible title is a symbol, a masked value, a bare URL, or a placeholder that disappears once the field has text.
+- New controls get an accessibility identifier too; the UI tests find elements by it.
+- Keep text at WCAG AA contrast (4.5:1, or 3:1 for large text) against the opaque tint in both palettes; the UI tests' accessibility audit checks it. The translucent panel falls back to an opaque tint under Reduce Transparency, so honor that for any new translucent surface.
+- Actions that hide the panel announce their outcome with `NSAccessibility.post(… .announcementRequested …)`.
 
 ## Commits
 
@@ -52,6 +60,7 @@ Types in use: `feat`, `fix`, `refactor`, `docs`, `chore`, `ci`. `chore: bump ver
 ## Before shipping a change
 
 - `swift test --package-path FlowerPasswordCore` passes.
+- The UI tests pass.
 - New UI strings exist in en-US, zh-CN, and zh-TW.
 - No new third-party dependency, no new persisted secret, no touched golden vectors.
 - If the change affects the release/update chain, re-read the "Self-update chain" and "Releasing" sections of architecture.md — that flow has sharp edges (tag/version mismatch, partial-publish can't be repaired by re-running).

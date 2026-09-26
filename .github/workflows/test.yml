@@ -1,0 +1,27 @@
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Core tests
+        run: swift test --package-path FlowerPasswordCore
+
+      - name: UI tests
+        run: |
+          xcodebuild test -project FlowerPassword.xcodeproj -scheme FlowerPassword \
+            -derivedDataPath build/test -resultBundlePath build/UITests.xcresult
+
+      - name: Upload UI test results
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: UITests.xcresult
+          path: build/UITests.xcresult
