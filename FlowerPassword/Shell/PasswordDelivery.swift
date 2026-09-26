@@ -31,12 +31,23 @@ final class PasswordDelivery {
     /// back to clipboard without prompting.
     func deliver(_ password: String) {
         guard willAutoType else {
-            clipboard.copy(password)
+            copy(password)
             return
         }
         autoType.type(password) { [weak self] in
-            self?.clipboard.copy(password)
+            self?.copy(password)
         }
+    }
+
+    /// The panel hides on delivery, so VoiceOver users hear the outcome instead.
+    private func copy(_ password: String) {
+        clipboard.copy(password)
+        NSAccessibility.post(
+            element: NSApp as Any, notification: .announcementRequested,
+            userInfo: [
+                .announcement: state.l10n.passwordCopiedAnnouncement,
+                .priority: NSAccessibilityPriorityLevel.high.rawValue,
+            ])
     }
 
     /// Flips auto-type from its currently *displayed* state. Enabling prompts

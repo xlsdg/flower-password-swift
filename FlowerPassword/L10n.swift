@@ -13,6 +13,9 @@ struct L10n: Sendable {
     let suffixPlaceholder: String
     let generateButton: String
     let lengthUnit: String
+    let lengthLabel: String
+    /// Spoken by VoiceOver once the password lands on the clipboard.
+    let passwordCopiedAnnouncement: String
     let hintPassword: String
     let hintKey: String
     let hintWebsite: String
@@ -106,6 +109,8 @@ struct L10n: Sendable {
         suffixPlaceholder: "区分代号后缀",
         generateButton: "生成密码(点击复制)",
         lengthUnit: "位",
+        lengthLabel: "密码长度",
+        passwordCopiedAnnouncement: "密码已复制到剪贴板",
         hintPassword: "记忆密码:可选择一个简单易记的密码,用于生成其他高强度密码。",
         hintKey: "区分代号:用于区别不同用途密码的简短代号,如淘宝账号可用\u{201C}taobao\u{201D}或\u{201C}tb\u{201D}等。",
         hintWebsite: "官网地址:",
@@ -164,6 +169,8 @@ struct L10n: Sendable {
         suffixPlaceholder: "區分代號後綴",
         generateButton: "生成密碼(點擊複製)",
         lengthUnit: "位",
+        lengthLabel: "密碼長度",
+        passwordCopiedAnnouncement: "密碼已複製到剪貼簿",
         hintPassword: "記憶密碼:可選擇一個簡單易記的密碼,用於生成其他高強度密碼。",
         hintKey: "區分代號:用於區別不同用途密碼的簡短代號,如淘寶帳號可用「taobao」或「tb」等。",
         hintWebsite: "官網地址:",
@@ -222,6 +229,8 @@ struct L10n: Sendable {
         suffixPlaceholder: "Suffix",
         generateButton: "Generate Password (Click to Copy)",
         lengthUnit: " chars",
+        lengthLabel: "Password Length",
+        passwordCopiedAnnouncement: "Password copied to clipboard",
         hintPassword: "Memory Password: A simple password to generate strong passwords.",
         hintKey: "Distinction Code: A short code for different accounts, e.g., \"taobao\" or \"tb\".",
         hintWebsite: "Official Website: ",

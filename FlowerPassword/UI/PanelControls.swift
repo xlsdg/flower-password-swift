@@ -22,12 +22,6 @@ final class FocusReportingSecureTextField: NSSecureTextField {
     }
 }
 
-/// Clickable-link text view kept out of the Tab loop: NSTextView draws no
-/// focus ring and cannot activate its link from the keyboard.
-final class ClickOnlyTextView: NSTextView {
-    override var canBecomeKeyView: Bool { false }
-}
-
 /// Borderless button with a layer-painted background. The default focus ring
 /// traces only the title text; this one traces the full background shape.
 class PanelButton: NSButton {
@@ -42,6 +36,14 @@ class PanelButton: NSButton {
         let (left, right) = bounds.divided(atDistance: bounds.width / 2, from: .minXEdge)
         if !corners.contains(.layerMinXMinYCorner) { left.fill() }
         if !corners.contains(.layerMaxXMinYCorner) { right.fill() }
+    }
+}
+
+/// Link-styled button: unlike a link inside a text view it is reachable with
+/// Tab, activates with Space, and gives VoiceOver a readable name.
+final class LinkButton: PanelButton {
+    override func resetCursorRects() {
+        addCursorRect(bounds, cursor: .pointingHand)
     }
 }
 

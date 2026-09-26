@@ -31,16 +31,18 @@ final class StatusItemController: NSObject {
         let icon = NSImage(named: "Mono")
         icon?.isTemplate = true
         button.image = icon
+        button.setAccessibilityIdentifier("statusItem")
         button.target = self
         button.action = #selector(statusItemClicked)
         button.sendAction(on: [.leftMouseUp, .rightMouseUp])
         refreshTooltip()
     }
 
-    /// The tooltip is derived from the current language, so it is refreshed on
-    /// every interaction rather than only when the menu opens.
+    /// The tooltip and the VoiceOver name are derived from the current language,
+    /// so they are refreshed on every interaction rather than only when the menu opens.
     private func refreshTooltip() {
         statusItem.button?.toolTip = state.l10n.trayTooltip
+        statusItem.button?.setAccessibilityLabel(state.l10n.trayTooltip)
     }
 
     @objc private func statusItemClicked() {

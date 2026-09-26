@@ -36,13 +36,18 @@ final class PanelFormView: NSView, NSTextFieldDelegate {
     private let lengthDivider = NSView()
     private let hintPasswordLabel = NSTextField(wrappingLabelWithString: "")
     private let hintKeyLabel = NSTextField(wrappingLabelWithString: "")
-    private let websiteView = ClickOnlyTextView()
+    private let websiteLabel = NSTextField(labelWithString: "")
+    private let websiteButton = LinkButton()
 
     private var focusedField: AppState.FocusField?
     private var isHoveringGenerate = false
     private var lastFocusToken: Int
 
     private static let websiteURL = URL(string: "https://flowerpassword.com/")!
+
+    /// UI tests measure contrast against the palette itself rather than
+    /// whatever happens to sit behind the translucent panel.
+    private static let forcesOpaqueBackground = ProcessInfo.processInfo.arguments.contains("--ui-testing")
 
     init(state: AppState, actions: PanelActions) {
         self.state = state
@@ -74,32 +79,39 @@ final class PanelFormView: NSView, NSTextFieldDelegate {
         configureField(prefixField, in: prefixContainer, cornerMask: Self.leftCorners, focus: .prefix)
         configureField(suffixField, in: suffixContainer, cornerMask: Self.rightCorners, focus: .suffix)
 
-        for label in [hintPasswordLabel, hintKeyLabel] {
+        for label in [hintPasswordLabel, hintKeyLabel, websiteLabel] {
             label.font = .systemFont(ofSize: 12)
             label.isSelectable = false
         }
+        configureButton(websiteButton, action: #selector(websitePressed))
 
-        websiteView.isEditable = false
-        websiteView.isSelectable = true
-        websiteView.drawsBackground = false
-        websiteView.textContainerInset = .zero
-        websiteView.textContainer?.lineFragmentPadding = 0
+        for (view, id) in [
+            (passwordField, "password"), (keyField, "key"), (prefixField, "prefix"),
+            (suffixField, "suffix"), (generateButton, "generate"), (lengthButton, "length"),
+            (closeButton, "close"), (websiteButton, "website"),
+        ] as [(NSView, String)] {
+            view.setAccessibilityIdentifier(id)
+        }
 
         for view in [
             titleLabel, closeButton, passwordContainer, keyContainer, generateButton,
             lengthButton, lengthDivider, prefixContainer, suffixContainer,
-            hintPasswordLabel, hintKeyLabel, websiteView,
+            hintPasswordLabel, hintKeyLabel, websiteLabel, websiteButton,
         ] as [NSView] {
             addSubview(view)
         }
 
         let tabOrder: [NSView] = [
-            passwordField, keyField, generateButton, lengthButton, prefixField, suffixField, closeButton,
+            passwordField, keyField, generateButton, lengthButton, prefixField, suffixField, websiteButton,
+            closeButton,
         ]
         for (view, next) in zip(tabOrder, tabOrder.dropFirst() + [passwordField]) {
             view.nextKeyView = next
         }
 
+        NSWorkspace.shared.notificationCenter.addObserver(
+            self, selector: #selector(accessibilityDisplayOptionsChanged),
+            name: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification, object: nil)
         observeState()
     }
 
@@ -182,7 +194,13 @@ final class PanelFormView: NSView, NSTextFieldDelegate {
         let palette = Palette.resolve(for: effectiveAppearance)
         let l10n = state.l10n
 
-        layer?.backgroundColor = palette.windowTint.cgColor
+        // Translucency lets the desktop erode text contrast; Reduce
+        // Transparency (implied by Increase Contrast) makes the tint solid.
+        let opaque = Self.forcesOpaqueBackground
+            || NSWorkspace.shared.accessibilityDisplayShouldReduceTransparency
+        layer?.backgroundColor = (opaque ? palette.windowTint.withAlphaComponent(1) : palette.windowTint).cgColor
+        // Never drawn on the borderless panel; VoiceOver announces it as the window name.
+        window?.title = l10n.appTitle
 
         titleLabel.stringValue = l10n.appTitle
         titleLabel.textColor = palette.textPrimary
@@ -199,6 +217,11 @@ final class PanelFormView: NSView, NSTextFieldDelegate {
         keyField.placeholderString = l10n.keyPlaceholder
         prefixField.placeholderString = l10n.prefixPlaceholder
         suffixField.placeholderString = l10n.suffixPlaceholder
+        // Placeholders vanish once a field has text; the label keeps it named.
+        passwordField.setAccessibilityLabel(l10n.passwordPlaceholder)
+        keyField.setAccessibilityLabel(l10n.keyPlaceholder)
+        prefixField.setAccessibilityLabel(l10n.prefixPlaceholder)
+        suffixField.setAccessibilityLabel(l10n.suffixPlaceholder)
         setValueIfChanged(passwordField, state.password)
         setValueIfChanged(keyField, state.key)
         setValueIfChanged(prefixField, state.prefix)
@@ -222,21 +245,28 @@ final class PanelFormView: NSView, NSTextFieldDelegate {
             generateButtonLabel(l10n), color: palette.buttonText)
         generateButton.layer?.backgroundColor =
             (isHoveringGenerate ? palette.buttonPrimaryHover : palette.buttonPrimary).cgColor
-        lengthButton.attributedTitle = Self.buttonTitle(
-            lengthLabel(state.passwordLength), color: palette.buttonText)
+        // Clicking does nothing until both inputs are filled; say so without dimming the brand button.
+        generateButton.setAccessibilityEnabled(!state.generatedCode.isEmpty)
+        let length = lengthLabel(state.passwordLength)
+        lengthButton.attributedTitle = Self.buttonTitle(length, color: palette.buttonText)
+        lengthButton.setAccessibilityLabel(l10n.lengthLabel)
+        lengthButton.setAccessibilityValue(length)
         lengthButton.layer?.backgroundColor = palette.buttonPrimary.cgColor
         lengthDivider.layer?.backgroundColor = palette.buttonText.cgColor
 
         hintPasswordLabel.stringValue = "· " + l10n.hintPassword
         hintKeyLabel.stringValue = "· " + l10n.hintKey
-        for label in [hintPasswordLabel, hintKeyLabel] {
+        websiteLabel.stringValue = "· " + l10n.hintWebsite
+        for label in [hintPasswordLabel, hintKeyLabel, websiteLabel] {
             label.textColor = palette.textSecondary
         }
-        websiteView.textStorage?.setAttributedString(websiteAttributed(l10n, palette: palette))
-        websiteView.linkTextAttributes = [
-            .foregroundColor: palette.link,
-            .cursor: NSCursor.pointingHand,
-        ]
+        websiteButton.attributedTitle = NSAttributedString(
+            string: Self.websiteURL.host() ?? Self.websiteURL.absoluteString,
+            attributes: [.font: NSFont.systemFont(ofSize: 12), .foregroundColor: palette.link])
+        // A bare domain reads as gibberish to VoiceOver; the hint names the destination.
+        websiteButton.setAccessibilityLabel(
+            l10n.hintWebsite.trimmingCharacters(in: CharacterSet(charactersIn: ":：").union(.whitespaces)))
+        websiteButton.toolTip = Self.websiteURL.absoluteString
 
         if state.focusToken != lastFocusToken {
             lastFocusToken = state.focusToken
@@ -298,21 +328,8 @@ final class PanelFormView: NSView, NSTextFieldDelegate {
             ])
     }
 
-    private func websiteAttributed(_ l10n: L10n, palette: Palette) -> NSAttributedString {
-        let text = NSMutableAttributedString(
-            string: "· " + l10n.hintWebsite,
-            attributes: [
-                .font: NSFont.systemFont(ofSize: 12),
-                .foregroundColor: palette.textSecondary,
-            ])
-        text.append(
-            NSAttributedString(
-                string: Self.websiteURL.absoluteString,
-                attributes: [
-                    .font: NSFont.systemFont(ofSize: 12),
-                    .link: Self.websiteURL,
-                ]))
-        return text
+    @objc private func accessibilityDisplayOptionsChanged() {
+        render()
     }
 
     override func viewDidChangeEffectiveAppearance() {
@@ -376,13 +393,15 @@ final class PanelFormView: NSView, NSTextFieldDelegate {
             y += height + Metrics.spacing
         }
 
-        let websiteHeight = ceil(
-            (websiteView.textStorage ?? NSTextStorage())
-                .boundingRect(
-                    with: NSSize(width: width, height: .greatestFiniteMagnitude),
-                    options: [.usesLineFragmentOrigin, .usesFontLeading]
-                ).height)
-        websiteView.frame = NSRect(x: pad, y: y, width: width, height: websiteHeight)
+        let labelSize = websiteLabel.cell?.cellSize ?? .zero
+        let linkSize = websiteButton.cell?.cellSize ?? .zero
+        // The button cell pads its title; pull it left so the link sits where inline text would.
+        let linkPadding = floor((linkSize.width - websiteButton.attributedTitle.size().width) / 2)
+        websiteLabel.frame = NSRect(x: pad, y: y, width: ceil(labelSize.width), height: ceil(labelSize.height))
+        websiteButton.frame = NSRect(
+            x: pad + ceil(labelSize.width) - linkPadding, y: y,
+            width: min(ceil(linkSize.width), width - ceil(labelSize.width) + linkPadding),
+            height: ceil(labelSize.height))
     }
 
     private func layoutField(_ field: NSTextField, in container: NSView, frame: NSRect) {
@@ -399,6 +418,10 @@ final class PanelFormView: NSView, NSTextFieldDelegate {
 
     @objc private func closePressed() {
         actions.hide()
+    }
+
+    @objc private func websitePressed() {
+        NSWorkspace.shared.open(Self.websiteURL)
     }
 
     @objc private func generatePressed() {
