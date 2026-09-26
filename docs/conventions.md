@@ -44,7 +44,7 @@ Follow the existing `AppState` pattern (`FlowerPassword/AppState.swift`):
 
 - Every control needs a VoiceOver name: set `setAccessibilityLabel` when the visible title is a symbol, a masked value, a bare URL, or a placeholder that disappears once the field has text.
 - New controls get an accessibility identifier too; the UI tests find elements by it.
-- Keep text at WCAG AA contrast (4.5:1, or 3:1 for large text) against the opaque tint in both palettes; the UI tests' accessibility audit checks it. The translucent panel falls back to an opaque tint under Reduce Transparency, so honor that for any new translucent surface.
+- Keep text at WCAG AA contrast (4.5:1, or 3:1 for large text) against the opaque tint in both palettes; the UI tests' accessibility audit checks it on Retina displays (1x displays such as CI's skip the pixel-based contrast check). The translucent panel falls back to an opaque tint under Reduce Transparency, so honor that for any new translucent surface.
 - Actions that hide the panel announce their outcome with `NSAccessibility.post(… .announcementRequested …)`.
 
 ## Commits
