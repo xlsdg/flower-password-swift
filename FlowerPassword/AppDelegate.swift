@@ -24,9 +24,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         // UI tests run against a private defaults suite, wiped unless
         // --keep-defaults relaunches to check persistence, and skip the global
-        // hotkey, which an installed copy of the app may already hold.
+        // hotkey, which an installed copy of the app may already hold. The
+        // language lives in the standard domain, so the wipe clears it there.
         let uiTesting = arguments.contains("--ui-testing")
-        let defaults = uiTesting ? Self.uiTestingDefaults(reset: !arguments.contains("--keep-defaults")) : .standard
+        let resetDefaults = uiTesting && !arguments.contains("--keep-defaults")
+        if resetDefaults { LanguagePreference.current = .system }
+        let defaults = uiTesting ? Self.uiTestingDefaults(reset: resetDefaults) : .standard
 
         let state = AppState(defaults: defaults)
         state.applyAppearance()
@@ -34,7 +37,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         delivery = PasswordDelivery(state: state)
         panelController = PanelController(state: state, delivery: delivery)
         hotkeyManager = HotkeyManager()
-        updateChecker = UpdateChecker(state: state)
+        updateChecker = UpdateChecker()
         statusItemController = StatusItemController(
             state: state,
             panels: panelController,
@@ -47,7 +50,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self?.panelController.showAtCursor()
         }
         if !uiTesting, !hotkeyManager.register(state.shortcut) {
-            Dialogs.shortcutRegistrationFailed(state.l10n, shortcut: state.shortcut.displayName)
+            Dialogs.shortcutRegistrationFailed(shortcut: state.shortcut.displayName)
         }
 
         // The Public Suffix List (used to prefill the distinction code from

@@ -15,8 +15,8 @@ struct PanelActions {
 /// three bulleted hints.
 ///
 /// Reads `AppState` through `withObservationTracking`, funneling every
-/// change (text, generated code, language, theme, focus token) through a
-/// single `render()` pass; edits flow back via `NSTextFieldDelegate`.
+/// change (text, generated code, theme, focus token) through a single
+/// `render()` pass; edits flow back via `NSTextFieldDelegate`.
 final class PanelFormView: NSView, NSTextFieldDelegate {
     private let state: AppState
     private let actions: PanelActions
@@ -44,6 +44,7 @@ final class PanelFormView: NSView, NSTextFieldDelegate {
     private var lastFocusToken: Int
 
     private static let websiteURL = URL(string: "https://flowerpassword.com/")!
+    private static let brandName = "Flower Password"
 
     /// UI tests measure contrast against the palette itself rather than
     /// whatever happens to sit behind the translucent panel.
@@ -64,6 +65,7 @@ final class PanelFormView: NSView, NSTextFieldDelegate {
         layer?.masksToBounds = true
 
         titleLabel.font = .systemFont(ofSize: 22, weight: .bold)
+        titleLabel.stringValue = Self.brandName
 
         configureButton(closeButton, action: #selector(closePressed))
         configureButton(generateButton, action: #selector(generatePressed), cornerMask: Self.leftCorners)
@@ -78,6 +80,27 @@ final class PanelFormView: NSView, NSTextFieldDelegate {
         configureField(keyField, in: keyContainer, cornerMask: Self.allCorners, focus: .key)
         configureField(prefixField, in: prefixContainer, cornerMask: Self.leftCorners, focus: .prefix)
         configureField(suffixField, in: suffixContainer, cornerMask: Self.rightCorners, focus: .suffix)
+        for (field, name) in [
+            (passwordField, String(localized: .memoryPassword)), (keyField, String(localized: .distinctionCode)),
+            (prefixField, String(localized: .prefix)), (suffixField, String(localized: .suffix)),
+        ] as [(NSTextField, String)] {
+            field.placeholderString = name
+            // Placeholders vanish once a field has text; the label keeps it named.
+            field.setAccessibilityLabel(name)
+        }
+
+        // VoiceOver reads the visual titles ("×", the masked code, a bare
+        // domain) as gibberish; these buttons need stable spoken names.
+        closeButton.toolTip = String(localized: .close)
+        closeButton.setAccessibilityLabel(String(localized: .close))
+        generateButton.setAccessibilityLabel(String(localized: .generatePassword))
+        lengthButton.setAccessibilityLabel(String(localized: .passwordLength))
+        websiteButton.setAccessibilityLabel(String(localized: .officialWebsite))
+        websiteButton.toolTip = Self.websiteURL.absoluteString
+
+        hintPasswordLabel.stringValue = "· " + String(localized: .memoryPasswordHint)
+        hintKeyLabel.stringValue = "· " + String(localized: .distinctionCodeHint)
+        websiteLabel.stringValue = "· " + String(localized: .officialWebsiteHint)
 
         for label in [hintPasswordLabel, hintKeyLabel, websiteLabel] {
             label.font = .systemFont(ofSize: 12)
@@ -123,6 +146,8 @@ final class PanelFormView: NSView, NSTextFieldDelegate {
     override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()
         window?.initialFirstResponder = passwordField
+        // Never drawn on the borderless panel; VoiceOver announces it as the window name.
+        window?.title = Self.brandName
     }
 
     // Top-down manual layout; a fixed-size panel needs no Auto Layout.
@@ -188,40 +213,20 @@ final class PanelFormView: NSView, NSTextFieldDelegate {
         }
     }
 
-    /// The single refresh path: strings, colors, field values, focus, and
-    /// geometry all update here, for the current theme and language.
+    /// The single refresh path: colors, field values, button titles, focus,
+    /// and geometry all update here, for the current theme.
     private func render() {
         let palette = Palette.resolve(for: effectiveAppearance)
-        let l10n = state.l10n
 
         // Translucency lets the desktop erode text contrast; Reduce
         // Transparency (implied by Increase Contrast) makes the tint solid.
         let opaque = Self.forcesOpaqueBackground
             || NSWorkspace.shared.accessibilityDisplayShouldReduceTransparency
         layer?.backgroundColor = (opaque ? palette.windowTint.withAlphaComponent(1) : palette.windowTint).cgColor
-        // Never drawn on the borderless panel; VoiceOver announces it as the window name.
-        window?.title = l10n.appTitle
-
-        titleLabel.stringValue = l10n.appTitle
         titleLabel.textColor = palette.textPrimary
 
         closeButton.attributedTitle = Self.buttonTitle("×", color: palette.buttonText)
         closeButton.layer?.backgroundColor = palette.buttonPrimary.cgColor
-        closeButton.toolTip = l10n.close
-        // VoiceOver reads the visual titles ("×", the masked code) as
-        // gibberish; both buttons need stable spoken names.
-        closeButton.setAccessibilityLabel(l10n.close)
-        generateButton.setAccessibilityLabel(l10n.generateButton)
-
-        passwordField.placeholderString = l10n.passwordPlaceholder
-        keyField.placeholderString = l10n.keyPlaceholder
-        prefixField.placeholderString = l10n.prefixPlaceholder
-        suffixField.placeholderString = l10n.suffixPlaceholder
-        // Placeholders vanish once a field has text; the label keeps it named.
-        passwordField.setAccessibilityLabel(l10n.passwordPlaceholder)
-        keyField.setAccessibilityLabel(l10n.keyPlaceholder)
-        prefixField.setAccessibilityLabel(l10n.prefixPlaceholder)
-        suffixField.setAccessibilityLabel(l10n.suffixPlaceholder)
         setValueIfChanged(passwordField, state.password)
         setValueIfChanged(keyField, state.key)
         setValueIfChanged(prefixField, state.prefix)
@@ -241,31 +246,23 @@ final class PanelFormView: NSView, NSTextFieldDelegate {
         prefixContainer.layer?.zPosition = focusedField == .prefix ? 1 : 0
 
         generateButton.attributedTitle = Self.buttonTitle(
-            generateButtonLabel(l10n), color: palette.buttonText)
+            generateButtonLabel(), color: palette.buttonText)
         generateButton.layer?.backgroundColor =
             (isHoveringGenerate ? palette.buttonPrimaryHover : palette.buttonPrimary).cgColor
         // Clicking does nothing until both inputs are filled; say so without dimming the brand button.
         generateButton.setAccessibilityEnabled(!state.generatedCode.isEmpty)
         let length = lengthLabel(state.passwordLength)
         lengthButton.attributedTitle = Self.buttonTitle(length, color: palette.buttonText)
-        lengthButton.setAccessibilityLabel(l10n.lengthLabel)
         lengthButton.setAccessibilityValue(length)
         lengthButton.layer?.backgroundColor = palette.buttonPrimary.cgColor
         lengthDivider.layer?.backgroundColor = palette.buttonText.cgColor
 
-        hintPasswordLabel.stringValue = "· " + l10n.hintPassword
-        hintKeyLabel.stringValue = "· " + l10n.hintKey
-        websiteLabel.stringValue = "· " + l10n.hintWebsite
         for label in [hintPasswordLabel, hintKeyLabel, websiteLabel] {
             label.textColor = palette.textSecondary
         }
         websiteButton.attributedTitle = NSAttributedString(
             string: Self.websiteURL.host() ?? Self.websiteURL.absoluteString,
             attributes: [.font: NSFont.systemFont(ofSize: 12), .foregroundColor: palette.link])
-        // A bare domain reads as gibberish to VoiceOver; the hint names the destination.
-        websiteButton.setAccessibilityLabel(
-            l10n.hintWebsite.trimmingCharacters(in: CharacterSet(charactersIn: ":：").union(.whitespaces)))
-        websiteButton.toolTip = Self.websiteURL.absoluteString
 
         if state.focusToken != lastFocusToken {
             lastFocusToken = state.focusToken
@@ -302,16 +299,16 @@ final class PanelFormView: NSView, NSTextFieldDelegate {
 
     /// Shows the localized call-to-action until both inputs are filled,
     /// then the masked code — revealed in full while hovered.
-    private func generateButtonLabel(_ l10n: L10n) -> String {
+    private func generateButtonLabel() -> String {
         let code = state.generatedCode
         if code.isEmpty {
-            return l10n.generateButton
+            return String(localized: .generatePassword)
         }
         return isHoveringGenerate ? code : TextUtilities.maskPassword(code)
     }
 
     private func lengthLabel(_ length: Int) -> String {
-        String(format: "%02d", length) + state.l10n.lengthUnit
+        String(localized: .passwordLengthValue(length.formatted(.number.precision(.integerLength(2)))))
     }
 
     private static func buttonTitle(_ string: String, color: NSColor) -> NSAttributedString {

@@ -14,10 +14,8 @@ enum SelfUpdater {
         return key.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    /// Carries no prose: the user-facing sentences live in `L10n`, rendered
-    /// by `UpdateChecker`, so all three languages stay in one place.
     /// `wrongBundle`'s reason is developer diagnostics and stays English.
-    enum UpdateError: Error {
+    enum UpdateError: LocalizedError {
         case translocated
         case notWritable(String)
         case volumeIgnoresOwnership(String)
@@ -28,6 +26,25 @@ enum SelfUpdater {
         case extractionFailed(Int32)
         case appMissingFromArchive
         case wrongBundle(String)
+
+        var errorDescription: String? {
+            switch self {
+            case .translocated: String(localized: .updateErrorTranslocated)
+            case .notWritable(let directory): String(localized: .updateErrorNotWritable(directory))
+            case .volumeIgnoresOwnership(let directory): String(localized: .updateErrorUnsafeVolume(directory))
+            case .invalidResponse: URLError(.badServerResponse).localizedDescription
+            case .httpStatus(let status): String(localized: .updateErrorHTTPStatus(status))
+            case .downloadTooLarge(let bytes, let limit):
+                String(
+                    localized: .updateErrorTooLarge(
+                        Int64(bytes).formatted(.byteCount(style: .file)),
+                        Int64(limit).formatted(.byteCount(style: .file))))
+            case .invalidSignature: String(localized: .updateErrorInvalidSignature)
+            case .extractionFailed(let status): String(localized: .updateErrorExtraction(Int(status)))
+            case .appMissingFromArchive: String(localized: .updateErrorAppMissing)
+            case .wrongBundle(let reason): String(localized: .updateErrorWrongBundle(reason))
+            }
+        }
     }
 
     /// Downloads, verifies, and installs the update, then relaunches.

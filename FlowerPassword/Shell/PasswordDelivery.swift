@@ -45,7 +45,7 @@ final class PasswordDelivery {
         NSAccessibility.post(
             element: NSApp as Any, notification: .announcementRequested,
             userInfo: [
-                .announcement: state.l10n.passwordCopiedAnnouncement,
+                .announcement: String(localized: .passwordCopied),
                 .priority: NSAccessibilityPriorityLevel.high.rawValue,
             ])
     }
@@ -59,7 +59,7 @@ final class PasswordDelivery {
             return
         }
         guard AutoTypeService.isTrusted(prompt: true) else {
-            Dialogs.autoTypeNeedsPermission(state.l10n)
+            Dialogs.autoTypeNeedsPermission()
             return
         }
         state.autoType = true

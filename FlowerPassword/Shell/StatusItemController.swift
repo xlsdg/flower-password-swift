@@ -35,19 +35,13 @@ final class StatusItemController: NSObject {
         button.target = self
         button.action = #selector(statusItemClicked)
         button.sendAction(on: [.leftMouseUp, .rightMouseUp])
-        refreshTooltip()
-    }
-
-    /// The tooltip and the VoiceOver name are derived from the current language,
-    /// so they are refreshed on every interaction rather than only when the menu opens.
-    private func refreshTooltip() {
-        statusItem.button?.toolTip = state.l10n.trayTooltip
-        statusItem.button?.setAccessibilityLabel(state.l10n.trayTooltip)
+        let name = String(localized: .statusItemName)
+        button.toolTip = name
+        button.setAccessibilityLabel(name)
     }
 
     @objc private func statusItemClicked() {
         guard let event = NSApp.currentEvent else { return }
-        refreshTooltip()
         if event.type == .rightMouseUp || event.modifierFlags.contains(.control) {
             handleRightClick()
         } else {
@@ -74,46 +68,46 @@ final class StatusItemController: NSObject {
     /// Show / Theme / Language / shortcut / auto-launch / auto-type / update / Quit,
     /// with the pickers as native checkmarked submenus.
     private func buildMenu() -> NSMenu {
-        let l10n = state.l10n
         let menu = NSMenu()
 
         menu.addItem(
-            ActionMenuItem(title: l10n.trayShow) { [weak self] in
+            ActionMenuItem(title: String(localized: .show)) { [weak self] in
                 guard let self, let button = self.statusItem.button else { return }
                 self.panels.showBelowStatusItem(button)
             })
         menu.addItem(.separator())
 
         menu.addItem(
-            picker(l10n.menuTheme, selected: state.theme, name: l10n.themeName) { [weak self] mode in
+            picker(String(localized: .theme), selected: state.theme, name: \.title) { [weak self] mode in
                 self?.state.theme = mode
             })
         menu.addItem(
-            picker(l10n.menuLanguage, selected: state.language, name: l10n.languageName) { [weak self] mode in
-                self?.state.language = mode
+            picker(String(localized: .language), selected: LanguagePreference.current, name: \.title) {
+                [weak self] preference in
+                self?.changeLanguage(to: preference)
             })
         menu.addItem(
-            picker(l10n.menuGlobalShortcut, selected: state.shortcut, name: \.displayName) { [weak self] option in
+            picker(String(localized: .globalShortcut), selected: state.shortcut, name: \.displayName) { [weak self] option in
                 self?.changeShortcut(to: option)
             })
         menu.addItem(.separator())
 
         menu.addItem(
-            ActionMenuItem(title: l10n.menuAutoLaunch, checked: AutoLaunch.isEnabled) { [weak self] in
+            ActionMenuItem(title: String(localized: .launchAtLogin), checked: AutoLaunch.isEnabled) { [weak self] in
                 self?.toggleAutoLaunch()
             })
         menu.addItem(
-            ActionMenuItem(title: l10n.menuAutoType, checked: delivery.willAutoType) { [weak self] in
+            ActionMenuItem(title: String(localized: .autoType), checked: delivery.willAutoType) { [weak self] in
                 self?.delivery.toggleAutoType()
             })
         menu.addItem(
-            ActionMenuItem(title: l10n.menuCheckUpdate) { [weak self] in
+            ActionMenuItem(title: String(localized: .checkForUpdates)) { [weak self] in
                 self?.updates.check()
             })
         menu.addItem(.separator())
 
         menu.addItem(
-            ActionMenuItem(title: l10n.trayQuit) { [weak self] in
+            ActionMenuItem(title: String(localized: .quit)) { [weak self] in
                 self?.confirmQuit()
             })
 
@@ -139,10 +133,7 @@ final class StatusItemController: NSObject {
         do {
             try AutoLaunch.set(!AutoLaunch.isEnabled)
         } catch {
-            Dialogs.autoLaunchFailed(
-                state.l10n,
-                detail: error.localizedDescription
-            )
+            Dialogs.autoLaunchFailed(detail: error.localizedDescription)
         }
     }
 
@@ -156,23 +147,43 @@ final class StatusItemController: NSObject {
             state.shortcut = option
             return
         }
-        Dialogs.shortcutRegistrationFailed(
-            state.l10n,
-            shortcut: option.displayName
-        )
+        Dialogs.shortcutRegistrationFailed(shortcut: option.displayName)
         if !hotkeys.register(state.shortcut) {
-            Dialogs.shortcutRegistrationFailed(
-                state.l10n,
-                shortcut: state.shortcut.displayName
-            )
+            Dialogs.shortcutRegistrationFailed(shortcut: state.shortcut.displayName)
         }
     }
 
     private func confirmQuit() {
         panels.hide()
-        if Dialogs.confirmQuit(state.l10n) {
+        if Dialogs.confirmQuit() {
             NSApp.terminate(nil)
         }
+    }
+
+    private func changeLanguage(to preference: LanguagePreference) {
+        guard preference != LanguagePreference.current else { return }
+        LanguagePreference.current = preference
+        if Dialogs.confirmRelaunchForLanguage() {
+            relaunch()
+        }
+    }
+
+    /// A detached shell waits for this process to exit before reopening the
+    /// app, so the new instance can register the global hotkey this one holds.
+    private func relaunch() {
+        let helper = Process()
+        helper.executableURL = URL(fileURLWithPath: "/bin/sh")
+        helper.arguments = [
+            "-c", "while /bin/kill -0 \"$1\" 2>/dev/null; do /bin/sleep 0.2; done; /usr/bin/open \"$2\"",
+            "sh", String(ProcessInfo.processInfo.processIdentifier), Bundle.main.bundlePath,
+        ]
+        do {
+            try helper.run()
+        } catch {
+            NSLog("Could not relaunch: %@", error.localizedDescription)
+            return
+        }
+        NSApp.terminate(nil)
     }
 }
 

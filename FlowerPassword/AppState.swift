@@ -8,13 +8,14 @@ enum ThemeMode: String, CaseIterable {
     case light
     case dark
     case auto
-}
 
-enum LanguageMode: String, CaseIterable {
-    case zhCN = "zh-CN"
-    case zhTW = "zh-TW"
-    case enUS = "en-US"
-    case auto
+    var title: String {
+        switch self {
+        case .light: String(localized: .themeLight)
+        case .dark: String(localized: .themeDark)
+        case .auto: String(localized: .themeAuto)
+        }
+    }
 }
 
 /// All mutable app state, observed by the panel form and mutated by the
@@ -34,7 +35,6 @@ final class AppState {
         static let suffix = "suffix"
         static let passwordLength = "passwordLength"
         static let theme = "theme"
-        static let language = "language"
         static let globalShortcut = "globalShortcut"
         static let autoType = "autoType"
     }
@@ -62,18 +62,6 @@ final class AppState {
         }
     }
 
-    var language: LanguageMode {
-        didSet {
-            defaults.set(language.rawValue, forKey: Keys.language)
-            l10n = .strings(for: Self.resolve(language))
-        }
-    }
-
-    /// The UI strings for the effective language. Stored rather than derived:
-    /// the form reads it dozens of times per body evaluation, and resolving
-    /// `.auto` hits the system locale every time.
-    private(set) var l10n: L10n
-
     var shortcut: ShortcutOption {
         didSet { defaults.set(shortcut.rawValue, forKey: Keys.globalShortcut) }
     }
@@ -100,17 +88,8 @@ final class AppState {
         let storedLength = defaults.integer(forKey: Keys.passwordLength)
         passwordLength = PasswordLength.range.contains(storedLength) ? storedLength : PasswordLength.default
         theme = defaults.string(forKey: Keys.theme).flatMap(ThemeMode.init) ?? .auto
-        let language = defaults.string(forKey: Keys.language).flatMap(LanguageMode.init) ?? .auto
-        self.language = language
         shortcut = defaults.string(forKey: Keys.globalShortcut).flatMap(ShortcutOption.init) ?? .commandOptionS
         autoType = defaults.bool(forKey: Keys.autoType)
-        l10n = .strings(for: Self.resolve(language))
-    }
-
-    /// `.auto` follows the system locale; the other cases are locale
-    /// identifiers themselves, so one `detect` call covers all four.
-    private static func resolve(_ mode: LanguageMode) -> ResolvedLanguage {
-        .detect(from: mode == .auto ? Locale.preferredLanguages.first : mode.rawValue)
     }
 
     /// Cheap enough to recompute on every keystroke — three HMAC-MD5 of tiny inputs.

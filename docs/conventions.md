@@ -24,7 +24,7 @@ Follow the existing `AppState` pattern (`FlowerPassword/AppState.swift`):
 1. Add the key to `AppState.Keys`.
 2. Add the `var`, with `didSet { defaults.set(...) }` if it must persist.
 3. Load it in `init(defaults:)` with a safe fallback for a missing/invalid stored value.
-4. If it's user-facing, add the label/options to **all three languages** in `L10n.swift` — the language can switch at runtime, so a string only present in one locale will visibly break the others.
+4. If it's user-facing, add a manual entry to `Localizable.xcstrings` with a comment and `en`, `zh-Hans`, and `zh-Hant` values, then use its generated symbol (`String(localized: .key)`). One sentence per entry with format specifiers for the variable parts, never concatenated fragments; numbers and sizes go through `formatted(_:)`.
 5. Wire the control into `PanelFormView.swift`, reading/writing `AppState` directly (no intermediate view model).
 
 ## Algorithm and security-sensitive code
@@ -61,6 +61,7 @@ Types in use: `feat`, `fix`, `refactor`, `docs`, `chore`, `ci`. `chore: bump ver
 
 - `swift test --package-path FlowerPasswordCore` passes.
 - The UI tests pass.
-- New UI strings exist in en-US, zh-CN, and zh-TW.
+- Every catalog entry is translated; this prints `[]`:
+  `jq '[.strings | to_entries[] | select(.value.localizations["zh-Hans"].stringUnit.state != "translated" or .value.localizations["zh-Hant"].stringUnit.state != "translated") | .key]' FlowerPassword/Localizable.xcstrings`
 - No new third-party dependency, no new persisted secret, no touched golden vectors.
 - If the change affects the release/update chain, re-read the "Self-update chain" and "Releasing" sections of architecture.md — that flow has sharp edges (tag/version mismatch, partial-publish can't be repaired by re-running).

@@ -9,22 +9,16 @@ import FlowerPasswordCore
 /// install failure.
 @MainActor
 final class UpdateChecker {
-    private let state: AppState
     private var isChecking = false
 
     private static let latestReleaseURL = URL(
         string: "https://api.github.com/repos/xlsdg/flower-password-swift/releases/latest")!
-
-    init(state: AppState) {
-        self.state = state
-    }
 
     func check() {
         guard !isChecking else { return }
         isChecking = true
         Task {
             defer { isChecking = false }
-            let l10n = state.l10n
             do {
                 let release = try await Self.fetchLatestRelease()
                 let current = Self.currentVersion
@@ -33,10 +27,10 @@ final class UpdateChecker {
 
                 switch decision {
                 case .upToDate:
-                    Dialogs.noUpdate(l10n, version: current)
+                    Dialogs.noUpdate(version: current)
 
                 case .installable(let archiveURL, let signatureURL):
-                    guard Dialogs.updateAvailableInstall(l10n, current: current, latest: latest) else {
+                    guard Dialogs.updateAvailableInstall(current: current, latest: latest) else {
                         return
                     }
                     do {
@@ -46,40 +40,19 @@ final class UpdateChecker {
                             expectedVersion: latest
                         )
                     } catch {
-                        if Dialogs.updateInstallFailed(l10n, detail: Self.detail(of: error, l10n)) {
+                        if Dialogs.updateInstallFailed(detail: error.localizedDescription) {
                             NSWorkspace.shared.open(release.pageURL)
                         }
                     }
 
                 case .manualOnly:
-                    if Dialogs.updateAvailableManual(l10n, current: current, latest: latest) {
+                    if Dialogs.updateAvailableManual(current: current, latest: latest) {
                         NSWorkspace.shared.open(release.pageURL)
                     }
                 }
             } catch {
-                Dialogs.updateError(l10n, detail: Self.detail(of: error, l10n))
+                Dialogs.updateError(detail: error.localizedDescription)
             }
-        }
-    }
-
-    /// The alert body for a failure. Updater errors carry no prose of their
-    /// own, so they are rendered here; anything else (URLSession, JSON
-    /// decoding) already has a system-localized description.
-    private static func detail(of error: Error, _ l10n: L10n) -> String {
-        guard let error = error as? SelfUpdater.UpdateError else {
-            return error.localizedDescription
-        }
-        switch error {
-        case .invalidResponse: return URLError(.badServerResponse).localizedDescription
-        case .translocated: return l10n.updateFailureTranslocated
-        case .notWritable(let directory): return l10n.updateFailureNotWritable(directory)
-        case .volumeIgnoresOwnership(let directory): return l10n.updateFailureUnsafeVolume(directory)
-        case .httpStatus(let status): return l10n.updateFailureHTTPStatus(status)
-        case .downloadTooLarge(let bytes, let limit): return l10n.updateFailureTooLarge(bytes, limit)
-        case .invalidSignature: return l10n.updateFailureInvalidSignature
-        case .extractionFailed(let status): return l10n.updateFailureExtraction(status)
-        case .appMissingFromArchive: return l10n.updateFailureAppMissing
-        case .wrongBundle(let reason): return l10n.updateFailureWrongBundle(reason)
         }
     }
 

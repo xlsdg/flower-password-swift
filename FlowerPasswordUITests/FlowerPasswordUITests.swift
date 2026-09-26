@@ -147,11 +147,21 @@ final class FlowerPasswordUITests: XCTestCase {
 
     // MARK: - Menu settings
 
-    func testLanguageMenuSwitchesUIStrings() {
+    /// The language applies on the next launch, which here drops the
+    /// `-AppleLanguages` argument that would otherwise override the choice.
+    func testLanguageAppliesAfterRelaunch() {
         launch()
         pickMenu("Language", "简体中文")
+        app.dialogs.firstMatch.buttons["Later"].click()
+        openPanel()
+        XCTAssertEqual(passwordField.placeholderValue, "Memory Password")
+
+        app.terminate()
+        app.launchArguments = ["--ui-testing", "--keep-defaults"]
+        app.launch()
         openPanel()
         XCTAssertEqual(passwordField.placeholderValue, "记忆密码")
+        XCTAssertEqual(lengthButton.value as? String, "16位")
     }
 
     func testThemeMenuSwitchesAppearance() {
@@ -169,7 +179,6 @@ final class FlowerPasswordUITests: XCTestCase {
     func testSettingsSurviveRelaunchButMemoryPasswordDoesNot() {
         launch()
         pickMenu("Theme", "Dark")
-        pickMenu("Language", "简体中文")
         openPanel()
         fill(password: "test", key: "github")
         prefixField.click()
@@ -177,7 +186,7 @@ final class FlowerPasswordUITests: XCTestCase {
         suffixField.click()
         suffixField.typeText("-suf")
         lengthButton.click()
-        app.menuItems["08位"].click()
+        app.menuItems["08 chars"].click()
 
         app.terminate()
         app.launchArguments.append("--keep-defaults")
@@ -185,8 +194,7 @@ final class FlowerPasswordUITests: XCTestCase {
         openPanel()
         XCTAssertEqual(prefixField.value as? String, "pre-")
         XCTAssertEqual(suffixField.value as? String, "-suf")
-        XCTAssertEqual(lengthButton.value as? String, "08位")
-        XCTAssertEqual(passwordField.placeholderValue, "记忆密码")
+        XCTAssertEqual(lengthButton.value as? String, "08 chars")
         XCTAssertLessThan(brightness(of: prefixField), 0.4)
         XCTAssertEqual(passwordField.value as? String ?? "", "", "the memory password must not be restored")
         XCTAssertEqual(keyField.value as? String ?? "", "")
@@ -274,7 +282,7 @@ final class FlowerPasswordUITests: XCTestCase {
         }
 
         app = XCUIApplication()
-        app.launchArguments = ["--ui-testing", "-AppleLanguages", "(en-US)"]
+        app.launchArguments = ["--ui-testing", "-AppleLanguages", "(en)"]
         app.launch()
         XCTAssertTrue(statusItem.waitForExistence(timeout: 5))
     }
