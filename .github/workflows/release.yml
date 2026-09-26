@@ -34,6 +34,8 @@ jobs:
             -P "$SIGNING_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
           rm "$RUNNER_TEMP/signing.p12"
           security set-key-partition-list -S apple-tool:,apple: -s -k "" "$KEYCHAIN" >/dev/null
+          # codesign looks up identities through the search list, even with --keychain.
+          security list-keychains -d user -s "$KEYCHAIN" $(security list-keychains -d user | tr -d '"')
           IDENTITY=$(security find-identity -p codesigning "$KEYCHAIN" | awk '/ 1\) / {print $2; exit}')
           if [ -z "$IDENTITY" ]; then
             echo "No code-signing identity in SIGNING_CERTIFICATE_P12" >&2
