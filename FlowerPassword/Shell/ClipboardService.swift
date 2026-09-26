@@ -12,7 +12,7 @@ final class ClipboardService {
     /// so cooperating clipboard managers keep it out of their history.
     private static let concealedType = NSPasteboard.PasteboardType("org.nspasteboard.ConcealedType")
 
-    private var pendingClear: DispatchWorkItem?
+    private var pendingClear: Task<Void, Never>?
     private var ownedChangeCount = -1
 
     func copy(_ text: String) {
@@ -24,14 +24,14 @@ final class ClipboardService {
         pasteboard.setString("", forType: Self.concealedType)
         ownedChangeCount = pasteboard.changeCount
 
-        let work = DispatchWorkItem { [weak self] in
+        pendingClear = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(Self.clearDelay))
+            guard !Task.isCancelled else { return }
             self?.clearIfStillOwned()
         }
-        pendingClear = work
-        DispatchQueue.main.asyncAfter(deadline: .now() + Self.clearDelay, execute: work)
     }
 
-    /// Immediately runs the pending clear, if any. The scheduled work item
+    /// Immediately runs the pending clear, if any. The scheduled task
     /// dies with the process, so termination paths (quit, the in-place
     /// update relaunch) call this to keep the 10-second promise.
     func clearIfOwned() {

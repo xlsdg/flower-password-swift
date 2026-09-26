@@ -33,26 +33,23 @@ final class AutoTypeService {
 
     /// Reactivates the app that owned focus before the panel opened, then
     /// injects `text` as synthesized keystrokes once it's had time to
-    /// restore that focus.
-    @discardableResult
-    func type(_ text: String, fallback: @escaping @MainActor () -> Void) -> Bool {
-        guard let app = previousApp, !text.isEmpty else { return false }
+    /// restore that focus. `fallback` runs whenever the text cannot be typed.
+    func type(_ text: String, fallback: @escaping @MainActor () -> Void) {
         pendingType?.cancel()
+        pendingType = nil
+        guard let app = previousApp, !text.isEmpty else {
+            fallback()
+            return
+        }
         app.activate()
-        pendingType = Task { @MainActor [weak self] in
+        pendingType = Task { @MainActor in
             try? await Task.sleep(for: .seconds(Self.activationDelay))
             // A newer type() superseded this one; its own path decides delivery.
             if Task.isCancelled { return }
-            guard app.isActive, NSWorkspace.shared.frontmostApplication == app else {
-                fallback()
-                return
-            }
-            if !Self.postKeystrokes(for: text) {
-                fallback()
-            }
-            self?.pendingType = nil
+            let delivered = app.isActive && NSWorkspace.shared.frontmostApplication == app
+                && Self.postKeystrokes(for: text)
+            if !delivered { fallback() }
         }
-        return true
     }
 
     private static func postKeystrokes(for text: String) -> Bool {

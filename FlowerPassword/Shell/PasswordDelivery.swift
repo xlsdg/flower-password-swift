@@ -34,10 +34,8 @@ final class PasswordDelivery {
             clipboard.copy(password)
             return
         }
-        if !autoType.type(password, fallback: { [weak self] in
+        autoType.type(password) { [weak self] in
             self?.clipboard.copy(password)
-        }) {
-            clipboard.copy(password)
         }
     }
 

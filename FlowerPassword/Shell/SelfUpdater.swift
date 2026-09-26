@@ -34,9 +34,10 @@ enum SelfUpdater {
     /// On success this never returns: the process terminates and the new
     /// version is opened by a detached helper.
     ///
-    /// Contains blocking process waits, so it must stay off the main actor.
-    /// As a nonisolated async function it runs on the global executor today;
-    /// revisit if the project ever adopts main-actor-by-default isolation.
+    /// Loads the whole archive into memory and verifies it, so it must stay
+    /// off the main actor. As a nonisolated async function it runs on the
+    /// global executor today; revisit if the project ever adopts
+    /// main-actor-by-default isolation.
     static func install(
         zipURL: URL,
         signatureURL: URL,
@@ -58,8 +59,8 @@ enum SelfUpdater {
         var handedOff = false
         defer { if !handedOff { try? FileManager.default.removeItem(at: staging) } }
 
-        let newApp = try extract(archiveData, in: staging)
-        try validate(newApp, expectedVersion: expectedVersion)
+        let newApp = try await extract(archiveData, in: staging)
+        try await validate(newApp, expectedVersion: expectedVersion)
         try await relaunch(bundleURL, newApp: newApp, staging: staging)
         handedOff = true
     }
@@ -111,7 +112,7 @@ enum SelfUpdater {
         else { throw UpdateError.invalidSignature }
     }
 
-    private static func extract(_ archive: Data, in staging: URL) throws -> URL {
+    private static func extract(_ archive: Data, in staging: URL) async throws -> URL {
         let zipFile = staging.appendingPathComponent("update.zip")
         try archive.write(to: zipFile)
         let unpacked = staging.appendingPathComponent("unpacked", isDirectory: true)
@@ -132,7 +133,7 @@ enum SelfUpdater {
             }
         }
         let root = canonical(unpacked)
-        let status = run("/usr/bin/sandbox-exec", [
+        let status = await run("/usr/bin/sandbox-exec", [
             "-D", "DEST=\(root)", "-p", profile,
             "/usr/bin/ditto", "-xk", zipFile.path, unpacked.path,
         ])
@@ -144,7 +145,7 @@ enum SelfUpdater {
             includingPropertiesForKeys: [.isSymbolicLinkKey]) else {
             throw UpdateError.appMissingFromArchive
         }
-        for case let entry as URL in entries {
+        for case let entry as URL in entries.allObjects {
             guard canonical(entry).hasPrefix(root + "/") else {
                 throw UpdateError.wrongBundle("archive contains an escaping symbolic link")
             }
@@ -158,24 +159,31 @@ enum SelfUpdater {
 
         // URLSession and ditto do not quarantine, but strip defensively so
         // the relaunch can never hit a Gatekeeper prompt.
-        run("/usr/bin/xattr", ["-dr", "com.apple.quarantine", app.path], quiet: true)
+        await run("/usr/bin/xattr", ["-dr", "com.apple.quarantine", app.path], quiet: true)
 
         return app
     }
 
     /// Runs a tool to completion and returns its exit status, or -1 when it
-    /// could not be launched at all.
+    /// could not be launched at all. Awaits the termination handler instead
+    /// of waitUntilExit(), which would block a cooperative-pool thread.
     @discardableResult
-    private static func run(_ tool: String, _ arguments: [String], quiet: Bool = false) -> Int32 {
+    private static func run(_ tool: String, _ arguments: [String], quiet: Bool = false) async -> Int32 {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: tool)
         process.arguments = arguments
         if quiet {
             process.standardError = FileHandle.nullDevice
         }
-        guard (try? process.run()) != nil else { return -1 }
-        process.waitUntilExit()
-        return process.terminationStatus
+        return await withCheckedContinuation { continuation in
+            process.terminationHandler = { continuation.resume(returning: $0.terminationStatus) }
+            do {
+                try process.run()
+            } catch {
+                process.terminationHandler = nil
+                continuation.resume(returning: -1)
+            }
+        }
     }
 
     private static var currentArchitecture: Int {
@@ -186,7 +194,7 @@ enum SelfUpdater {
         #endif
     }
 
-    private static func validate(_ app: URL, expectedVersion: String) throws {
+    private static func validate(_ app: URL, expectedVersion: String) async throws {
         guard let bundle = Bundle(url: app) else {
             throw UpdateError.wrongBundle("unreadable bundle")
         }
@@ -198,7 +206,7 @@ enum SelfUpdater {
               FileManager.default.isExecutableFile(atPath: executable.path),
               let architectures = bundle.executableArchitectures,
               architectures.contains(NSNumber(value: currentArchitecture)),
-              run("/usr/bin/codesign", ["--verify", "--deep", "--strict", app.path]) == 0 else {
+              await run("/usr/bin/codesign", ["--verify", "--deep", "--strict", app.path]) == 0 else {
             throw UpdateError.wrongBundle("missing executable, unsupported architecture, or invalid code signature")
         }
         let version = bundle.shortVersion
