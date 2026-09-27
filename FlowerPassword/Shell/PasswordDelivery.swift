@@ -1,12 +1,5 @@
 import AppKit
 
-/// Owns the password delivery decision: when the user generates a password,
-/// should it be typed directly into the focused field (auto-type) or copied
-/// to the clipboard? The rule is: auto-type when both the user-facing setting
-/// is enabled AND the process still holds Accessibility trust; clipboard
-/// otherwise.
-///
-/// Callers invoke `deliver(_:)` and never re-implement the rule themselves.
 @MainActor
 final class PasswordDelivery {
     private let state: AppState
@@ -26,9 +19,6 @@ final class PasswordDelivery {
         state.autoType && AutoTypeService.isTrusted(prompt: false)
     }
 
-    /// Delivers the password per `willAutoType`. If auto-type is desired but
-    /// trust has been revoked since the menu was last opened, this falls
-    /// back to clipboard without prompting.
     func deliver(_ password: String) {
         guard willAutoType else {
             copy(password)
@@ -50,9 +40,7 @@ final class PasswordDelivery {
             ])
     }
 
-    /// Flips auto-type from its currently *displayed* state. Enabling prompts
-    /// for Accessibility permission if not already granted, and leaves the
-    /// setting off if the user declines; disabling needs no prompt.
+    /// Flips from the *displayed* state, so a revoked trust re-prompts.
     func toggleAutoType() {
         guard !willAutoType else {
             state.autoType = false
@@ -65,12 +53,10 @@ final class PasswordDelivery {
         state.autoType = true
     }
 
-    /// Captures the app that had focus before the panel opens.
     func capturePreviousApp() {
         autoType.capturePreviousApp()
     }
 
-    /// Clears the clipboard if this service owns it, e.g. on app termination.
     func clearClipboardIfOwned() {
         clipboard.clearIfOwned()
     }

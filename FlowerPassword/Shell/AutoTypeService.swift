@@ -23,17 +23,12 @@ final class AutoTypeService {
             .flatMap { $0 == NSRunningApplication.current ? nil : $0 }
     }
 
-    /// Whether the process is trusted for Accessibility. Pass `prompt: true`
-    /// to have the system show its own permission dialog when untrusted.
     static func isTrusted(prompt: Bool) -> Bool {
         // The literal value of kAXTrustedCheckOptionPrompt, a mutable C global Swift 6 rejects.
         let options = ["AXTrustedCheckOptionPrompt": prompt] as CFDictionary
         return AXIsProcessTrustedWithOptions(options)
     }
 
-    /// Reactivates the app that owned focus before the panel opened, then
-    /// injects `text` as synthesized keystrokes once it's had time to
-    /// restore that focus. `fallback` runs whenever the text cannot be typed.
     func type(_ text: String, fallback: @escaping @MainActor () -> Void) {
         pendingType?.cancel()
         pendingType = nil

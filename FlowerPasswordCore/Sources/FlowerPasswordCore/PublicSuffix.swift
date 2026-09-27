@@ -1,9 +1,8 @@
 import Foundation
 
 /// Public Suffix List matcher used to prefill the distinction code from a
-/// URL on the clipboard: hosts whose suffix is not in the list are rejected,
-/// and the result is the registrable domain's leftmost label
-/// ("www.github.com" → "github").
+/// URL: hosts whose suffix is not in the list are rejected, and the result
+/// is the registrable domain's leftmost label ("www.github.com" → "github").
 public struct PublicSuffix: Sendable {
     /// Parses the bundled list lazily on first access; parsing 16k rules
     /// takes a few milliseconds, so callers may warm this off the main thread.

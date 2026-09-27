@@ -1,7 +1,5 @@
 import Foundation
 
-/// A release manifest decoded from the GitHub Releases API. Public so tests
-/// and the Shell layer can construct fixtures and pass decoded API responses.
 public struct Release: Decodable, Equatable, Sendable {
     public let tagName: String
     public let htmlUrl: String
@@ -23,39 +21,20 @@ public struct Release: Decodable, Equatable, Sendable {
         }
     }
 
-    /// The tag name with a leading "v" stripped, if present, so "v1.2.3" and
-    /// "1.2.3" both normalize to "1.2.3". The single place callers should
-    /// read the release's version — avoids re-deriving this in Shell.
     public var normalizedVersion: String {
         tagName.hasPrefix("v") ? String(tagName.dropFirst()) : tagName
     }
 
-    /// The release page to send users to when automatic installation is not
-    /// possible, falling back to the repository when `htmlUrl` is unusable.
-    /// The single place callers should read the release's page URL.
     public var pageURL: URL {
         URL(string: htmlUrl) ?? URL(string: "https://github.com/xlsdg/flower-password-swift/releases")!
     }
 }
 
-/// The outcome of comparing the current version against a release: up to date,
-/// an installable update is available, or an update exists but must be
-/// downloaded manually.
 public enum ReleaseDecision: Equatable, Sendable {
     case upToDate
     case installable(archiveURL: URL, signatureURL: URL)
-    /// Callers send the user to `Release.pageURL`.
     case manualOnly
 
-    /// Decides what to do with a release from the GitHub API. Returns
-    /// `.upToDate` when the release is not newer than `currentVersion`,
-    /// `.installable` when the release has a properly-named and signed archive
-    /// with HTTPS URLs, or `.manualOnly` otherwise.
-    ///
-    /// - Parameters:
-    ///   - currentVersion: The app's `CFBundleShortVersionString` at runtime.
-    ///   - release: A successfully-decoded release manifest from the API.
-    ///     Network failures should be handled before calling this function.
     public static func decide(currentVersion: String, release: Release) -> ReleaseDecision {
         let latestVersion = release.normalizedVersion
 

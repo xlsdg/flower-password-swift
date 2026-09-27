@@ -273,7 +273,7 @@ final class PanelFormView: NSView, NSTextFieldDelegate {
     }
 
     /// Editing a field echoes its own value back through observation; only
-    /// external writes (clipboard prefill) may replace the text, otherwise
+    /// external writes (URL prefill) may replace the text, otherwise
     /// the caret would jump on every keystroke.
     private func setValueIfChanged(_ field: NSTextField, _ value: String) {
         if field.stringValue != value {

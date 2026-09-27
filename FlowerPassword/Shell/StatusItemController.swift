@@ -65,8 +65,6 @@ final class StatusItemController: NSObject {
 
     // MARK: - Menu
 
-    /// Show / Theme / Language / shortcut / auto-launch / auto-type / update / Quit,
-    /// with the pickers as native checkmarked submenus.
     private func buildMenu() -> NSMenu {
         let menu = NSMenu()
 
@@ -114,7 +112,6 @@ final class StatusItemController: NSObject {
         return menu
     }
 
-    /// A submenu listing every case of `T`, with `selected` checkmarked.
     private func picker<T: CaseIterable & Equatable>(
         _ title: String, selected: T, name: (T) -> String, pick: @escaping (T) -> Void
     ) -> NSMenuItem {

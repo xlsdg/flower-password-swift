@@ -47,14 +47,9 @@ enum SelfUpdater {
         }
     }
 
-    /// Downloads, verifies, and installs the update, then relaunches.
-    /// On success this never returns: the process terminates and the new
-    /// version is opened by a detached helper.
-    ///
-    /// Loads the whole archive into memory and verifies it, so it must stay
-    /// off the main actor. As a nonisolated async function it runs on the
-    /// global executor today; revisit if the project ever adopts
-    /// main-actor-by-default isolation.
+    /// On success this never returns: the process terminates and a detached
+    /// helper opens the new version. Buffers the whole archive in memory, so
+    /// it must stay off the main actor.
     static func install(
         zipURL: URL,
         signatureURL: URL,

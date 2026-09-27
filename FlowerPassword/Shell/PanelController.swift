@@ -2,9 +2,6 @@ import AppKit
 
 import FlowerPasswordCore
 
-/// Owns the floating panel: builds the vibrancy + form view stack,
-/// positions it below the status item or at the mouse cursor, and hides it
-/// as soon as it stops being the key window.
 @MainActor
 final class PanelController: NSObject, NSWindowDelegate {
     private let panel: FloatingPanel
@@ -60,9 +57,6 @@ final class PanelController: NSObject, NSWindowDelegate {
         panel.delegate = self
     }
 
-    /// Horizontally centered under the status item, flush with the bottom
-    /// edge of the menu bar. Shows unconditionally, regardless of current
-    /// visibility or recent dismissal.
     func showBelowStatusItem(_ button: NSStatusBarButton) {
         guard let buttonWindow = button.window else { return }
         let frame = buttonWindow.frame
@@ -70,10 +64,6 @@ final class PanelController: NSObject, NSWindowDelegate {
         show(topLeft: topLeft, on: buttonWindow.screen)
     }
 
-    /// Toggles the panel below the status item: hides if visible, shows if
-    /// hidden. When the panel just hid because this click made it lose key
-    /// status, the toggle is ignored (otherwise a single click would dismiss
-    /// and immediately re-show).
     func toggleBelowStatusItem(_ button: NSStatusBarButton) {
         if panel.isVisible {
             hide()
@@ -85,8 +75,6 @@ final class PanelController: NSObject, NSWindowDelegate {
         showBelowStatusItem(button)
     }
 
-    /// Top-left corner at the mouse cursor, clamped into the work area of
-    /// the screen under the cursor.
     func showAtCursor() {
         let mouse = NSEvent.mouseLocation
         let screen = NSScreen.screens.first { $0.frame.contains(mouse) } ?? NSScreen.main
@@ -138,7 +126,6 @@ final class PanelController: NSObject, NSWindowDelegate {
         state.key = label
     }
 
-    /// The panel hides as soon as it stops being the key window.
     func windowDidResignKey(_ notification: Notification) {
         hide()
     }

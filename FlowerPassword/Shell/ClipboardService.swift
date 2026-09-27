@@ -40,8 +40,6 @@ final class ClipboardService {
         clearIfStillOwned()
     }
 
-    /// Clears the pasteboard only while it still holds what this service
-    /// last wrote — the single place that ownership rule lives.
     private func clearIfStillOwned() {
         let pasteboard = NSPasteboard.general
         guard pasteboard.changeCount == ownedChangeCount else { return }
