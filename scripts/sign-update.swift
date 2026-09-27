@@ -26,62 +26,66 @@ func run() throws {
     guard arguments.count >= 2 else {
         fail("usage: sign-update.swift generate <private-key-path> | sign <file> | verify <public-key> <file> <sig>")
     }
-
     switch arguments[1] {
-    case "generate":
-        guard arguments.count == 3 else { fail("usage: generate <private-key-path>") }
-        let path = arguments[2]
-        guard !FileManager.default.fileExists(atPath: path) else {
-            fail("refusing to overwrite existing key at \(path)")
-        }
-        let key = Curve25519.Signing.PrivateKey()
-        let encoded = Data(key.rawRepresentation.base64EncodedString().utf8)
-        guard
-            FileManager.default.createFile(
-                atPath: path, contents: encoded, attributes: [.posixPermissions: 0o600])
-        else { fail("could not write private key to \(path)") }
-        print(key.publicKey.rawRepresentation.base64EncodedString())
-
-    case "sign":
-        guard arguments.count == 3 else { fail("usage: sign <file>") }
-        guard
-            let encoded = ProcessInfo.processInfo.environment["ED25519_PRIVATE_KEY"],
-            let keyData = Data(
-                base64Encoded: encoded.trimmingCharacters(in: .whitespacesAndNewlines))
-        else { fail("ED25519_PRIVATE_KEY must hold the base64 private key") }
-        guard keyData.count == 32 else { fail("Ed25519 private key must contain exactly 32 bytes") }
-        let key = try Curve25519.Signing.PrivateKey(rawRepresentation: keyData)
-        let publicKeyURL = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
-            .appendingPathComponent("../FlowerPassword/Resources/update-public-key.txt")
-        let expected = try String(contentsOf: publicKeyURL, encoding: .utf8)
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        guard key.publicKey.rawRepresentation.base64EncodedString() == expected else {
-            fail("private key does not match the embedded public key")
-        }
-        let payload = try Data(contentsOf: URL(fileURLWithPath: arguments[2]))
-        let signaturePath = arguments[2] + ".sig"
-        try (key.signature(for: payload).base64EncodedString() + "\n")
-            .write(toFile: signaturePath, atomically: true, encoding: .utf8)
-        print(signaturePath)
-
-    case "verify":
-        guard arguments.count == 5 else { fail("usage: verify <public-key> <file> <sig>") }
-        guard let keyData = Data(base64Encoded: arguments[2]) else {
-            fail("invalid base64 public key")
-        }
-        let key = try Curve25519.Signing.PublicKey(rawRepresentation: keyData)
-        let payload = try Data(contentsOf: URL(fileURLWithPath: arguments[3]))
-        let signatureText = try String(contentsOfFile: arguments[4], encoding: .utf8)
-        guard
-            let signature = Data(
-                base64Encoded: signatureText.trimmingCharacters(in: .whitespacesAndNewlines)),
-            key.isValidSignature(signature, for: payload)
-        else { fail("signature does NOT match \(arguments[3])") }
-        print("signature OK")
-
-    default:
-        fail("unknown command: \(arguments[1])")
+    case "generate": try generate(arguments)
+    case "sign": try sign(arguments)
+    case "verify": try verify(arguments)
+    default: fail("unknown command: \(arguments[1])")
     }
+}
+
+func generate(_ arguments: [String]) throws {
+    guard arguments.count == 3 else { fail("usage: generate <private-key-path>") }
+    let path = arguments[2]
+    guard !FileManager.default.fileExists(atPath: path) else {
+        fail("refusing to overwrite existing key at \(path)")
+    }
+    let key = Curve25519.Signing.PrivateKey()
+    let encoded = Data(key.rawRepresentation.base64EncodedString().utf8)
+    guard
+        FileManager.default.createFile(
+            atPath: path, contents: encoded, attributes: [.posixPermissions: 0o600])
+    else { fail("could not write private key to \(path)") }
+    print(key.publicKey.rawRepresentation.base64EncodedString())
+}
+
+func sign(_ arguments: [String]) throws {
+    guard arguments.count == 3 else { fail("usage: sign <file>") }
+    guard
+        let encoded = ProcessInfo.processInfo.environment["ED25519_PRIVATE_KEY"],
+        let keyData = Data(
+            base64Encoded: encoded.trimmingCharacters(in: .whitespacesAndNewlines))
+    else { fail("ED25519_PRIVATE_KEY must hold the base64 private key") }
+    guard keyData.count == 32 else { fail("Ed25519 private key must contain exactly 32 bytes") }
+    let key = try Curve25519.Signing.PrivateKey(rawRepresentation: keyData)
+    let publicKeyURL = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+        .appendingPathComponent("../FlowerPassword/Resources/update-public-key.txt")
+    let expected = try String(contentsOf: publicKeyURL, encoding: .utf8)
+        .trimmingCharacters(in: .whitespacesAndNewlines)
+    guard key.publicKey.rawRepresentation.base64EncodedString() == expected else {
+        fail("private key does not match the embedded public key")
+    }
+    let payload = try Data(contentsOf: URL(fileURLWithPath: arguments[2]))
+    let signaturePath = arguments[2] + ".sig"
+    try (key.signature(for: payload).base64EncodedString() + "\n")
+        .write(toFile: signaturePath, atomically: true, encoding: .utf8)
+    print(signaturePath)
+}
+
+func verify(_ arguments: [String]) throws {
+    guard arguments.count == 5 else { fail("usage: verify <public-key> <file> <sig>") }
+    guard let keyData = Data(base64Encoded: arguments[2]) else {
+        fail("invalid base64 public key")
+    }
+    let key = try Curve25519.Signing.PublicKey(rawRepresentation: keyData)
+    let payload = try Data(contentsOf: URL(fileURLWithPath: arguments[3]))
+    let signatureText = try String(contentsOfFile: arguments[4], encoding: .utf8)
+    guard
+        let signature = Data(
+            base64Encoded: signatureText.trimmingCharacters(in: .whitespacesAndNewlines)),
+        key.isValidSignature(signature, for: payload)
+    else { fail("signature does NOT match \(arguments[3])") }
+    print("signature OK")
 }
 
 do {

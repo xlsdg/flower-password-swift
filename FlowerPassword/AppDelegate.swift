@@ -12,24 +12,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         installEditMenu()
-
-        // Acknowledge the update helper before anything that can block (modal
-        // dialogs), or a healthy install gets rolled back on timeout. Every
-        // release must keep this handshake (see docs/architecture.md).
         let arguments = CommandLine.arguments
-        if arguments.count == 3, arguments[1] == "--update-ready" {
-            do { try Data().write(to: URL(fileURLWithPath: arguments[2]), options: .atomic) }
-            catch { NSLog("Could not acknowledge update startup: %@", error.localizedDescription) }
-        }
+        // Before anything that can block (modal dialogs), or a healthy install
+        // gets rolled back on timeout.
+        Self.acknowledgeUpdateHelper(arguments)
 
-        // UI tests run against a private defaults suite, wiped unless
-        // --keep-defaults relaunches to check persistence, and skip the global
-        // hotkey, which an installed copy of the app may already hold. The
-        // language lives in the standard domain, so the wipe clears it there.
+        // UI tests also skip the global hotkey, which an installed copy of the
+        // app may already hold.
         let uiTesting = arguments.contains("--ui-testing")
-        let resetDefaults = uiTesting && !arguments.contains("--keep-defaults")
-        if resetDefaults { LanguagePreference.current = .system }
-        let defaults = uiTesting ? Self.uiTestingDefaults(reset: resetDefaults) : .standard
+        let defaults = uiTesting ? Self.uiTestingDefaults(arguments) : .standard
 
         let state = AppState(defaults: defaults)
         state.applyAppearance()
@@ -53,17 +44,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             Dialogs.shortcutRegistrationFailed(shortcut: state.shortcut.displayName)
         }
 
-        // The Public Suffix List (used to prefill the distinction code from
-        // clipboard URLs) parses lazily; warm it off the main thread.
         Task.detached(priority: .utility) {
             _ = PublicSuffix.shared
         }
     }
 
-    private static func uiTestingDefaults(reset: Bool) -> UserDefaults {
+    /// Every release must keep this handshake (see docs/architecture.md).
+    private static func acknowledgeUpdateHelper(_ arguments: [String]) {
+        guard arguments.count == 3, arguments[1] == "--update-ready" else { return }
+        do { try Data().write(to: URL(fileURLWithPath: arguments[2]), options: .atomic) }
+        catch { NSLog("Could not acknowledge update startup: %@", error.localizedDescription) }
+    }
+
+    /// A private suite, wiped unless --keep-defaults relaunches to check
+    /// persistence. The language lives in the standard domain, so the wipe
+    /// clears it there.
+    private static func uiTestingDefaults(_ arguments: [String]) -> UserDefaults {
         let suite = "org.xlsdg.flowerpassword.uitests"
         let defaults = UserDefaults(suiteName: suite)!
-        if reset { defaults.removePersistentDomain(forName: suite) }
+        if !arguments.contains("--keep-defaults") {
+            LanguagePreference.current = .system
+            defaults.removePersistentDomain(forName: suite)
+        }
         return defaults
     }
 

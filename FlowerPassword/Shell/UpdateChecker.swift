@@ -2,11 +2,6 @@ import AppKit
 
 import FlowerPasswordCore
 
-/// Manual update check against the GitHub releases API: compare the latest
-/// tag against the bundle version and, when the release carries a signed
-/// archive, download, verify, install, and relaunch in place. Releases
-/// without a signature fall back to opening the release page, as does any
-/// install failure.
 @MainActor
 final class UpdateChecker {
     private var isChecking = false
@@ -21,38 +16,33 @@ final class UpdateChecker {
             defer { isChecking = false }
             do {
                 let release = try await Self.fetchLatestRelease()
-                let current = Self.currentVersion
-                let latest = release.normalizedVersion
-                let decision = ReleaseDecision.decide(currentVersion: current, release: release)
-
-                switch decision {
-                case .upToDate:
-                    Dialogs.noUpdate(version: current)
-
-                case .installable(let archiveURL, let signatureURL):
-                    guard Dialogs.updateAvailableInstall(current: current, latest: latest) else {
-                        return
-                    }
-                    do {
-                        try await SelfUpdater.install(
-                            zipURL: archiveURL,
-                            signatureURL: signatureURL,
-                            expectedVersion: latest
-                        )
-                    } catch {
-                        if Dialogs.updateInstallFailed(detail: error.localizedDescription) {
-                            NSWorkspace.shared.open(release.pageURL)
-                        }
-                    }
-
-                case .manualOnly:
-                    if Dialogs.updateAvailableManual(current: current, latest: latest) {
-                        NSWorkspace.shared.open(release.pageURL)
-                    }
+                if await Self.shouldOpenReleasePage(release) {
+                    NSWorkspace.shared.open(release.pageURL)
                 }
             } catch {
                 Dialogs.updateError(detail: error.localizedDescription)
             }
+        }
+    }
+
+    private static func shouldOpenReleasePage(_ release: Release) async -> Bool {
+        let current = currentVersion
+        let latest = release.normalizedVersion
+        switch ReleaseDecision.decide(currentVersion: current, release: release) {
+        case .upToDate:
+            Dialogs.noUpdate(version: current)
+            return false
+        case .installable(let archiveURL, let signatureURL):
+            guard Dialogs.updateAvailableInstall(current: current, latest: latest) else { return false }
+            do {
+                try await SelfUpdater.install(
+                    zipURL: archiveURL, signatureURL: signatureURL, expectedVersion: latest)
+                return false
+            } catch {
+                return Dialogs.updateInstallFailed(detail: error.localizedDescription)
+            }
+        case .manualOnly:
+            return Dialogs.updateAvailableManual(current: current, latest: latest)
         }
     }
 
