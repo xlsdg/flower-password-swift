@@ -20,6 +20,7 @@ xcodebuild -project FlowerPassword.xcodeproj -scheme FlowerPassword \
 # ad-hoc signature from xcodebuild stays (local builds).
 if [ -n "${SIGNING_IDENTITY:-}" ]; then
   codesign --force --options runtime --timestamp=none \
+    --entitlements FlowerPassword/FlowerPassword.entitlements \
     ${SIGNING_KEYCHAIN:+--keychain "$SIGNING_KEYCHAIN"} \
     --sign "$SIGNING_IDENTITY" "$APP"
 fi

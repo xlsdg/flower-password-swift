@@ -1,0 +1,30 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "NSAppleEventsUsageDescription" : {
+      "comment" : "Automation permission prompt shown the first time the panel opens over a browser.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "FlowerPassword reads the current tab's address to fill in the distinction code."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "花密读取当前标签页的地址，用于填写区分代码。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "花密讀取目前分頁的網址，用於填寫區分代碼。"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

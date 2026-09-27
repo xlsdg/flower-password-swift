@@ -29,6 +29,7 @@
 		FA0000000000000000000010 /* Exceptions for "FlowerPassword" folder in "FlowerPassword" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				FlowerPassword.entitlements,
 				Info.plist,
 			);
 			target = FA0000000000000000000005 /* FlowerPassword */;
@@ -329,6 +330,7 @@
 		FA0000000000000000000007 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = FlowerPassword/FlowerPassword.entitlements;
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
@@ -350,6 +352,7 @@
 		FA0000000000000000000008 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = FlowerPassword/FlowerPassword.entitlements;
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;

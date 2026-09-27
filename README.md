@@ -10,7 +10,7 @@ Flower Password is a "nothing stored" approach to password management: remember 
 - Type the memory password and distinction code, press Return — the password is copied and the panel hides
 - Password length from 6 to 32 characters, with optional custom prefix/suffix
 - Clipboard clears itself 10 seconds after a copy (and leaves anything you copied in the meantime alone)
-- If the clipboard holds a URL, the registrable domain is prefilled as the distinction code (`www.google.co.uk` → `google`)
+- The registrable domain of the current browser tab (or of a URL on the clipboard) is prefilled as the distinction code (`www.google.co.uk` → `google`). Safari and Chromium browsers ask once for Automation permission (re-enable in System Settings → Privacy & Security → Automation); Firefox needs the Accessibility permission that auto-type uses
 - Light / dark / system themes; English, Simplified Chinese, and Traditional Chinese UI
 - Optional launch at login; one-click in-app updates with Ed25519-verified downloads
 

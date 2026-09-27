@@ -101,6 +101,7 @@ final class PanelController: NSObject, NSWindowDelegate {
 
     private func show(topLeft: NSPoint, on screen: NSScreen?) {
         delivery.capturePreviousApp()
+        let browserURL = BrowserURLReader.activeTabURL(of: NSWorkspace.shared.frontmostApplication)
         var point = topLeft
         if let visible = screen?.visibleFrame {
             // Push inside the right/bottom edges first; the left/top clamps
@@ -118,16 +119,20 @@ final class PanelController: NSObject, NSWindowDelegate {
         // After ordering front: the first prefill of a session may block on
         // the Public Suffix List still parsing, and that must not delay the
         // panel appearing.
-        prefillKeyFromClipboard()
+        prefillKey(browserURL: browserURL)
         state.requestFocus()
     }
 
-    /// On every show, if the clipboard holds an absolute URL whose host has
-    /// a recognized public suffix, the registrable label ("google" from
-    /// www.google.co.uk) replaces the distinction code.
-    private func prefillKeyFromClipboard() {
-        guard let text = NSPasteboard.general.string(forType: .string),
-            let label = PublicSuffix.shared.registrableLabel(fromURLText: text),
+    /// On every show, the first absolute URL (frontmost browser tab, then
+    /// clipboard) whose host has a recognized public suffix replaces the
+    /// distinction code with its registrable label ("google" from
+    /// www.google.co.uk).
+    private func prefillKey(browserURL: String?) {
+        let candidates = [browserURL, NSPasteboard.general.string(forType: .string)]
+        guard
+            let label = candidates.lazy.compactMap({ $0 }).compactMap({
+                PublicSuffix.shared.registrableLabel(fromURLText: $0)
+            }).first,
             label != state.key
         else { return }
         state.key = label
