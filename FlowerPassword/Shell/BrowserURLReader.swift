@@ -76,12 +76,24 @@ enum BrowserURLReader {
 
     /// Breadth-first search of the focused window for the first web area,
     /// whose AXURL is the active tab's full URL (the address bar drops the
-    /// scheme and shows typed text while editing).
+    /// scheme and shows typed text while editing). Gecko builds the web
+    /// content tree only once AXEnhancedUserInterface is set, and asynchronously,
+    /// so the first read after a browser launch polls briefly.
     private static func webAreaURL(pid: pid_t) -> String? {
         guard AutoTypeService.isTrusted(prompt: false) else { return nil }
         // Only the system-wide element's timeout covers every element reached below.
         AXUIElementSetMessagingTimeout(AXUIElementCreateSystemWide(), 0.5)
         let app = AXUIElementCreateApplication(pid)
+        AXUIElementSetAttributeValue(app, "AXEnhancedUserInterface" as CFString, kCFBooleanTrue)
+        let deadline = Date().addingTimeInterval(0.3)
+        repeat {
+            if let url = firstWebAreaURL(app) { return url }
+            usleep(20_000)
+        } while Date() < deadline
+        return nil
+    }
+
+    private static func firstWebAreaURL(_ app: AXUIElement) -> String? {
         guard let window = attribute(app, kAXFocusedWindowAttribute) else { return nil }
         // ponytail: node cap bounds a pathological tree; the web area sits ~5 levels deep.
         var queue = [window as! AXUIElement]
