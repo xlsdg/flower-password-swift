@@ -8,10 +8,6 @@ import FlowerPasswordCore
 @MainActor
 @Suite("Session")
 struct SessionTests {
-    private func makeSettings() -> Settings {
-        Settings(defaults: UserDefaults(suiteName: "test.\(UUID().uuidString)")!)
-    }
-
     @Test("the caret starts in the password field until it is filled")
     func focusField() {
         let session = Session()
@@ -41,5 +37,27 @@ struct SessionTests {
         session.key = "github"
         let expected = try FlowerPassword.code(password: "test", key: "pre-github-suf", length: 12)
         #expect(session.generatedCode(using: settings) == expected)
+    }
+
+    @Test("prefills the registrable label from the first usable candidate")
+    func prefillFirstUsable() {
+        let session = Session()
+        session.prefillKey(from: [nil, "not a url", "https://www.google.co.uk/search", "https://github.com"])
+        #expect(session.key == "google")
+    }
+
+    @Test("prefers the earlier source: browser tab before clipboard")
+    func prefillOrder() {
+        let session = Session()
+        session.prefillKey(from: ["https://github.com/x", "https://google.com"])
+        #expect(session.key == "github")
+    }
+
+    @Test("leaves the key alone when no candidate is a usable URL")
+    func prefillNothing() {
+        let session = Session()
+        session.key = "typed"
+        session.prefillKey(from: [nil, "example.com", "hello world"])
+        #expect(session.key == "typed")
     }
 }

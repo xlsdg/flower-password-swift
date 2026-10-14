@@ -27,6 +27,19 @@ public final class Session {
         focusToken += 1
     }
 
+    /// Replaces the distinction code with the registrable label of the first
+    /// candidate URL ("google" from www.google.co.uk) whose host has a listed
+    /// public suffix. Candidates are tried in order and nil entries skipped.
+    public func prefillKey(from candidates: [String?], using suffixes: PublicSuffix = .shared) {
+        guard
+            let label = candidates.lazy.compactMap({ $0 }).compactMap({
+                suffixes.registrableLabel(fromURLText: $0)
+            }).first,
+            label != key
+        else { return }
+        key = label
+    }
+
     /// Cheap enough to recompute on every keystroke: three HMAC-MD5 over tiny inputs.
     public func generatedCode(using settings: Settings) -> String {
         TextUtilities.generatedCode(
