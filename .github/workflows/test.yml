@@ -13,6 +13,11 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      - name: Format check
+        run: |
+          xcrun swift-format lint --strict --recursive \
+            FlowerPassword FlowerPasswordUITests FlowerPasswordCore/Sources FlowerPasswordCore/Tests
+
       - name: Core tests
         run: swift test --package-path FlowerPasswordCore
 

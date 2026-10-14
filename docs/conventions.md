@@ -1,6 +1,6 @@
 # Conventions
 
-Practices for iterating on this codebase. [architecture.md](architecture.md) describes what exists today; this describes how to add to it. No linter enforces any of this — it's held by review, not tooling.
+Practices for iterating on this codebase. [architecture.md](architecture.md) describes what exists today; this describes how to add to it. Formatting is enforced by `swift-format` (the Xcode toolchain's, no extra dependency); everything else is held by review.
 
 ## Layering
 
@@ -14,7 +14,8 @@ Before writing code, decide which layer it belongs in (see architecture.md for t
 
 ## Style
 
-- 4-space indent, no tabs.
+- Formatting is `.swift-format` (4-space indent, 120 columns, import order left alone because Apple and project imports are grouped by hand). Run `xcrun swift-format format --in-place --recursive FlowerPassword FlowerPasswordUITests FlowerPasswordCore/Sources FlowerPasswordCore/Tests` before committing; CI runs the same paths with `lint --strict`. Plain `lint` exits 0 even with findings, so `--strict` is what makes it a check.
+- Release and Debug builds treat Swift warnings as errors.
 - Doc comments (`///`) only when the WHY isn't obvious from the code — a non-obvious invariant, a perf reason for a stored vs. computed property, a subtlety a reviewer would otherwise ask about. Don't restate what the signature already says. See `Settings.swift` for the calibration this repo uses.
 - Group related constants in a nested `enum` (e.g. `Settings.Keys` for `UserDefaults` keys) rather than scattering string literals.
 - No third-party dependencies beyond Sparkle (the updater). Anything else needs an explicit decision recorded in AGENTS.md.
@@ -61,7 +62,8 @@ Types in use: `feat`, `fix`, `refactor`, `docs`, `chore`, `ci`. `chore: bump ver
 
 ## Before shipping a change
 
-- `swift test --package-path FlowerPasswordCore` passes.
+- `swift test --package-path FlowerPasswordCore` passes (Core and Domain tests).
+- `swift-format lint --strict` is clean (see Style).
 - The UI tests pass.
 - Every catalog entry is translated; this prints `[]`:
   `jq '[.strings | to_entries[] | select(.value.localizations["zh-Hans"].stringUnit.state != "translated" or .value.localizations["zh-Hant"].stringUnit.state != "translated") | .key]' FlowerPassword/Localizable.xcstrings`

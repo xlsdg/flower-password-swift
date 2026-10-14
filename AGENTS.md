@@ -21,6 +21,9 @@ xcodebuild test -project FlowerPassword.xcodeproj -scheme FlowerPassword \
 swift test --package-path FlowerPasswordCore --filter PublicSuffixTests
 swift test --package-path FlowerPasswordCore --filter urlText
 
+# Format (CI runs `lint --strict` over the same paths)
+xcrun swift-format format --in-place --recursive FlowerPassword FlowerPasswordUITests FlowerPasswordCore/Sources FlowerPasswordCore/Tests
+
 # Build the app
 xcodebuild -project FlowerPassword.xcodeproj -scheme FlowerPassword -configuration Release build
 

@@ -46,7 +46,8 @@ final class AutoTypeService: AutoTyper {
             try? await Task.sleep(for: .seconds(Self.activationDelay))
             // A newer type() superseded this one; its own path decides delivery.
             if Task.isCancelled { return }
-            let delivered = app.isActive && NSWorkspace.shared.frontmostApplication == app
+            let delivered =
+                app.isActive && NSWorkspace.shared.frontmostApplication == app
                 && Self.postKeystrokes(for: text)
             if !delivered { fallback() }
         }

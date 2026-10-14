@@ -232,7 +232,8 @@ final class FlowerPasswordUITests: XCTestCase {
         // The contrast audit samples rendered pixels; on a 1x display (CI's
         // virtual screen) anti-aliasing keeps thin 12pt strokes from ever
         // reaching their color, so any small text fails. Retina runs check it.
-        let types: XCUIAccessibilityAuditType = (NSScreen.main?.backingScaleFactor ?? 1) >= 2
+        let types: XCUIAccessibilityAuditType =
+            (NSScreen.main?.backingScaleFactor ?? 1) >= 2
             ? .all : XCUIAccessibilityAuditType.all.subtracting(.contrast)
         openPanel()
         fill(password: "test", key: "github")

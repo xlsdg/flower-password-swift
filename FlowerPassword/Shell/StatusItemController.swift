@@ -87,7 +87,8 @@ final class StatusItemController: NSObject {
                 self?.changeLanguage(to: preference)
             })
         menu.addItem(
-            picker(String(localized: .globalShortcut), selected: settings.shortcut, name: \.displayName) { [weak self] option in
+            picker(String(localized: .globalShortcut), selected: settings.shortcut, name: \.displayName) {
+                [weak self] option in
                 self?.shortcuts.change(to: option)
             })
         menu.addItem(.separator())

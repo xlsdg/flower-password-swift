@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "indentation": {
+    "spaces": 4
+  },
+  "lineLength": 120,
+  "respectsExistingLineBreaks": true,
+  "lineBreakBeforeControlFlowKeywords": false,
+  "rules": {
+    "OrderedImports": false,
+    "GroupNumericLiterals": false
+  }
+}

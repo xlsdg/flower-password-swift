@@ -69,7 +69,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         ]
         for (title, action, key) in items {
             let item = NSMenuItem(title: title, action: action, keyEquivalent: key)
-            item.target = nil // route through responder chain
+            item.target = nil  // route through responder chain
             editMenu.addItem(item)
         }
 

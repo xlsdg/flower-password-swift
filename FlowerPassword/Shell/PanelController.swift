@@ -94,11 +94,8 @@ final class PanelController: NSObject, NSWindowDelegate {
     private func show(topLeft: NSPoint, on screen: NSScreen?) {
         autoTyper.capturePreviousApp()
         let browserURL = BrowserURLReader.activeTabURL(of: NSWorkspace.shared.frontmostApplication)
-        let point = screen.map {
-            PanelPlacement.clampedTopLeft(
-                topLeft, size: CGSize(width: PanelMetrics.width, height: PanelMetrics.height),
-                in: $0.visibleFrame)
-        } ?? topLeft
+        let size = CGSize(width: PanelMetrics.width, height: PanelMetrics.height)
+        let point = screen.map { PanelPlacement.clampedTopLeft(topLeft, size: size, in: $0.visibleFrame) } ?? topLeft
         panel.setFrameTopLeftPoint(point)
         // Activating (invisible for an accessory app — it owns no menu bar)
         // keeps text-field focus and secure input reliable.

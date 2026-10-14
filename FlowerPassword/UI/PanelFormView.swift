@@ -222,7 +222,8 @@ final class PanelFormView: NSView, NSTextFieldDelegate {
 
         // Translucency lets the desktop erode text contrast; Reduce
         // Transparency (implied by Increase Contrast) makes the tint solid.
-        let opaque = Self.forcesOpaqueBackground
+        let opaque =
+            Self.forcesOpaqueBackground
             || NSWorkspace.shared.accessibilityDisplayShouldReduceTransparency
         layer?.backgroundColor = (opaque ? palette.windowTint.withAlphaComponent(1) : palette.windowTint).cgColor
         titleLabel.textColor = palette.textPrimary
