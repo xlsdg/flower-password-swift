@@ -10,17 +10,17 @@ final class StatusItemController: NSObject {
     private let settings: Settings
     private let panels: PanelController
     private let shortcuts: ShortcutChanger
-    private let updates: UpdateChecker
+    private let updater: Updater
     private let delivery: PasswordDelivery
 
     init(
         settings: Settings, panels: PanelController, shortcuts: ShortcutChanger,
-        updates: UpdateChecker, delivery: PasswordDelivery
+        updater: Updater, delivery: PasswordDelivery
     ) {
         self.settings = settings
         self.panels = panels
         self.shortcuts = shortcuts
-        self.updates = updates
+        self.updater = updater
         self.delivery = delivery
         self.statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         super.init()
@@ -102,7 +102,7 @@ final class StatusItemController: NSObject {
             })
         menu.addItem(
             ActionMenuItem(title: String(localized: .checkForUpdates)) { [weak self] in
-                self?.updates.check()
+                self?.updater.checkForUpdates()
             })
         menu.addItem(.separator())
 

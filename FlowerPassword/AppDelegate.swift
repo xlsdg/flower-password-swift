@@ -9,10 +9,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         installEditMenu()
         let arguments = CommandLine.arguments
-        // Before anything that can block (modal dialogs), or a healthy install
-        // gets rolled back on timeout.
-        Self.acknowledgeUpdateHelper(arguments)
-
         // UI tests also skip the global hotkey, which an installed copy of the
         // app may already hold.
         let uiTesting = arguments.contains("--ui-testing")
@@ -30,13 +26,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         Task.detached(priority: .utility) {
             _ = PublicSuffix.shared
         }
-    }
-
-    /// Every release must keep this handshake (see docs/architecture.md).
-    private static func acknowledgeUpdateHelper(_ arguments: [String]) {
-        guard arguments.count == 3, arguments[1] == "--update-ready" else { return }
-        do { try Data().write(to: URL(fileURLWithPath: arguments[2]), options: .atomic) }
-        catch { NSLog("Could not acknowledge update startup: %@", error.localizedDescription) }
     }
 
     /// A private suite, wiped unless --keep-defaults relaunches to check

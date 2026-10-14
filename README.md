@@ -12,7 +12,7 @@ Flower Password is a "nothing stored" approach to password management: remember 
 - Clipboard clears itself 10 seconds after a copy (and leaves anything you copied in the meantime alone)
 - The registrable domain of the current browser tab (or of a URL on the clipboard) is prefilled as the distinction code (`www.google.co.uk` → `google`). Safari and Chromium browsers ask once for Automation permission (re-enable in System Settings → Privacy & Security → Automation); Firefox needs the Accessibility permission that auto-type uses
 - Light / dark / system themes; English, Simplified Chinese, and Traditional Chinese UI
-- Optional launch at login; one-click in-app updates with Ed25519-verified downloads
+- Optional launch at login; one-click in-app updates via Sparkle with Ed25519-verified downloads
 
 ## Install
 
@@ -48,7 +48,7 @@ xattr -dr com.apple.quarantine /Applications/FlowerPassword.app
 
 ### Updates
 
-"Check for Updates" in the menu installs new versions in place: the app downloads the release archive, verifies it against an Ed25519 public key bundled with the app, swaps itself out, and relaunches. In-app updates are not quarantined, so the Gatekeeper approval above is only ever needed once.
+"Check for Updates" in the menu installs new versions in place through [Sparkle](https://sparkle-project.org): it reads the `appcast.xml` attached to the latest GitHub release, verifies the archive against an Ed25519 public key bundled with the app, swaps itself out, and relaunches. In-app updates are not quarantined, so the Gatekeeper approval above is only ever needed once. Releases before the Sparkle switch cannot update in place: install the first Sparkle release manually.
 
 ## Usage
 
@@ -71,15 +71,11 @@ For example, memory password `123456` with distinction code `taobao` yields `Kfd
 ## Privacy
 
 - The memory password lives in memory only and is **never written to disk**; the app stores and syncs no passwords
-- The only network requests are the manual "Check for Updates" call to the GitHub Releases API and, after you confirm an update, the download of the new release from GitHub — no telemetry, no analytics, no automatic connections
+- The only network requests are the manual "Check for Updates" fetch of `appcast.xml` from GitHub Releases and, after you confirm an update, the download of the new release from GitHub — scheduled checks and system profiling are disabled in Sparkle, and there is no telemetry or analytics
 
 ## Performance
 
-Native Swift with AppKit and zero third-party dependencies. Measured on Apple Silicon:
-
-- Cold start in about 34 ms
-- About 27 MB resident memory
-- About 1 MB on disk
+Native Swift with AppKit; Sparkle is the only third-party dependency (it provides the updater). The universal build is about 5 MB on disk, 2.7 MB of it Sparkle.
 
 ## Build from source
 

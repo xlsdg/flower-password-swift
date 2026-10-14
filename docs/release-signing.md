@@ -7,7 +7,7 @@ CI re-signs every release with one fixed self-signed certificate (see "Code sign
 - GitHub secrets: `SIGNING_CERTIFICATE_P12` (base64 of the `.p12`) and `SIGNING_CERTIFICATE_PASSWORD`.
 - Backup: the maintainer's password manager, entry `FlowerPassword code signing` (password field is the `.p12` password; the note says where the `.p12` file is stored).
 
-The update-archive key (`ED25519_PRIVATE_KEY`) is separate; see the header of `scripts/sign-update.swift`.
+The update-archive key (`ED25519_PRIVATE_KEY`, the base64 32-byte Ed25519 seed Sparkle's tools accept) is separate. Its public half is `SUPublicEDKey` in `FlowerPassword/Info.plist`; CI refuses to publish when the two do not match. Rotating it strands every installed copy, because installs only trust the key they shipped with.
 
 ## Restore the secrets from the backup
 
@@ -41,7 +41,7 @@ basicConstraints=critical,CA:false
 keyUsage=critical,digitalSignature
 extendedKeyUsage=critical,codeSigning
 EOF
-# 100-year validity: an expired certificate can fail the updater's codesign check.
+# 100-year validity: an expired certificate can fail Sparkle's code-signature check.
 openssl req -x509 -newkey rsa:2048 -nodes -keyout key.pem -out cert.pem -days 36500 -config cert.cnf
 PASSWORD=$(openssl rand -base64 24)
 openssl pkcs12 -export -inkey key.pem -in cert.pem -out FlowerPassword-signing.p12 -passout pass:"$PASSWORD"

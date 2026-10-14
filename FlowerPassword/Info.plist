@@ -21,13 +21,21 @@
 	<key>CFBundleShortVersionString</key>
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>
-	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<string>$(MARKETING_VERSION)</string>
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.utilities</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>$(MACOSX_DEPLOYMENT_TARGET)</string>
 	<key>LSUIElement</key>
 	<true/>
+	<key>SUEnableAutomaticChecks</key>
+	<false/>
+	<key>SUFeedURL</key>
+	<string>https://github.com/xlsdg/flower-password-swift/releases/latest/download/appcast.xml</string>
+	<key>SUPublicEDKey</key>
+	<string>qf1aoyEllNVxl+neetyWDbL2tx3m1IA89qz/F0iD+7k=</string>
+	<key>SUSendProfileInfo</key>
+	<false/>
 	<key>NSAppleEventsUsageDescription</key>
 	<string>FlowerPassword reads the current tab's address to fill in the distinction code.</string>
 	<key>NSHumanReadableCopyright</key>

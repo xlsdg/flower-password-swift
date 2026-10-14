@@ -32,39 +32,6 @@ enum Dialogs {
             confirm: String(localized: .relaunchNow), dismiss: String(localized: .later))
     }
 
-    /// Returns true when the user confirmed the signed in-place update.
-    static func updateAvailableInstall(current: String, latest: String) -> Bool {
-        show(
-            .informational, String(localized: .updateAvailable(current, latest)),
-            detail: String(localized: .updateInstallDetail),
-            confirm: String(localized: .installAndRelaunch), dismiss: String(localized: .later))
-    }
-
-    /// Fallback for releases without a signed archive: returns true when
-    /// the user chose to open the download page.
-    static func updateAvailableManual(current: String, latest: String) -> Bool {
-        show(
-            .informational, String(localized: .updateAvailable(current, latest)),
-            detail: String(localized: .updateManualDetail),
-            confirm: String(localized: .ok), dismiss: String(localized: .cancel))
-    }
-
-    /// Returns true when the user chose to open the download page after an
-    /// in-place install failed.
-    static func updateInstallFailed(detail: String) -> Bool {
-        show(
-            .critical, String(localized: .updateInstallFailed), detail: detail,
-            confirm: String(localized: .openDownloadPage), dismiss: String(localized: .cancel))
-    }
-
-    static func noUpdate(version: String) {
-        show(.informational, String(localized: .upToDate), detail: String(localized: .currentVersion(version)))
-    }
-
-    static func updateError(detail: String) {
-        show(.critical, String(localized: .updateCheckFailed), detail: detail)
-    }
-
     /// Runs the alert modally after activating the app. With `confirm` and
     /// `dismiss` it is a two-button question returning true for `confirm`;
     /// without them it is a plain notice with the system OK button.

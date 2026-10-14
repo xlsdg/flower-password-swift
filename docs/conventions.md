@@ -6,26 +6,28 @@ Practices for iterating on this codebase. [architecture.md](architecture.md) des
 
 Before writing code, decide which layer it belongs in (see architecture.md for the full picture):
 
-- **Pure/testable logic → `FlowerPasswordCore/`.** If it doesn't touch AppKit/UserDefaults/the filesystem, it belongs in Core and gets a unit test. The app target is covered only end to end by the UI tests, so logic left in `FlowerPassword/` is tested only through the UI.
-- **System integration → `Shell/`.** Status item, panel window, hotkey, clipboard, self-update, launch-at-login — anything wrapping an AppKit/Carbon/ServiceManagement API.
-- **View code → `UI/`.** Stays a thin observer of `AppState`; no business logic.
+- **Pure algorithms → `FlowerPasswordCore/`.** No AppKit, no state: the derivation, the Public Suffix List, text helpers.
+- **State and orchestration → `FlowerPasswordDomain`.** Anything with branching that decides what happens (settings, session, delivery, clipboard clearing, shortcut rollback, geometry). It talks to the system only through the protocols in `Ports.swift` and gets a `swift test` unit test using fakes. The app target is covered only end to end by the UI tests, so logic left in `FlowerPassword/` is tested only through the UI.
+- **System adapters → `Shell/`.** The AppKit/Carbon/ServiceManagement/Sparkle implementations of those protocols, plus the status item and panel window. Thin: no decisions worth a unit test.
+- **View code → `UI/`.** A thin observer of `Settings` and `Session`; frames come from `PanelLayout`; no business logic.
+- **Wiring → `Composition.swift`.** The only place that constructs the object graph.
 
 ## Style
 
 - 4-space indent, no tabs.
-- Doc comments (`///`) only when the WHY isn't obvious from the code — a non-obvious invariant, a perf reason for a stored vs. computed property, a subtlety a reviewer would otherwise ask about. Don't restate what the signature already says. See `AppState.swift` for the calibration this repo uses.
-- Group related constants in a nested `enum` (e.g. `AppState.Keys` for `UserDefaults` keys) rather than scattering string literals.
-- No new third-party dependencies, ever — this is a hard constraint from AGENTS.md, not a style preference.
+- Doc comments (`///`) only when the WHY isn't obvious from the code — a non-obvious invariant, a perf reason for a stored vs. computed property, a subtlety a reviewer would otherwise ask about. Don't restate what the signature already says. See `Settings.swift` for the calibration this repo uses.
+- Group related constants in a nested `enum` (e.g. `Settings.Keys` for `UserDefaults` keys) rather than scattering string literals.
+- No third-party dependencies beyond Sparkle (the updater). Anything else needs an explicit decision recorded in AGENTS.md.
 
 ## Adding a persisted setting
 
-Follow the existing `AppState` pattern (`FlowerPassword/AppState.swift`):
+Follow the existing `Settings` pattern (`FlowerPasswordCore/Sources/FlowerPasswordDomain/Settings.swift`):
 
-1. Add the key to `AppState.Keys`.
+1. Add the key to `Settings.Keys`.
 2. Add the `var`, with `didSet { defaults.set(...) }` if it must persist.
-3. Load it in `init(defaults:)` with a safe fallback for a missing/invalid stored value.
+3. Load it in `init(defaults:)` with a safe fallback for a missing/invalid stored value, and cover that fallback in `SettingsTests`.
 4. If it's user-facing, add a manual entry to `Localizable.xcstrings` with a comment and `en`, `zh-Hans`, and `zh-Hant` values, then use its generated symbol (`String(localized: .key)`). One sentence per entry with format specifiers for the variable parts, never concatenated fragments; numbers and sizes go through `formatted(_:)`.
-5. Wire the control into `PanelFormView.swift`, reading/writing `AppState` directly (no intermediate view model).
+5. Wire the control into `PanelFormView.swift`, reading/writing `Settings` directly (no intermediate view model).
 
 ## Algorithm and security-sensitive code
 
@@ -64,4 +66,4 @@ Types in use: `feat`, `fix`, `refactor`, `docs`, `chore`, `ci`. `chore: bump ver
 - Every catalog entry is translated; this prints `[]`:
   `jq '[.strings | to_entries[] | select(.value.localizations["zh-Hans"].stringUnit.state != "translated" or .value.localizations["zh-Hant"].stringUnit.state != "translated") | .key]' FlowerPassword/Localizable.xcstrings`
 - No new third-party dependency, no new persisted secret, no touched golden vectors.
-- If the change affects the release/update chain, re-read the "Self-update chain" and "Releasing" sections of architecture.md — that flow has sharp edges (tag/version mismatch, partial-publish can't be repaired by re-running).
+- If the change affects the release/update chain, re-read the "Updates (Sparkle)", "Code signing" and "Releasing" sections of architecture.md — that flow has sharp edges (tag/version mismatch, `CFBundleVersion` must track the marketing version, partial-publish can't be repaired by re-running).

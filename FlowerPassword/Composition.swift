@@ -9,7 +9,7 @@ final class Composition {
     private let panels: PanelController
     private let statusItem: StatusItemController
     private let hotkeys = HotkeyManager()
-    private let updates = UpdateChecker()
+    private let updater = Updater()
     let shortcuts: ShortcutChanger
 
     init(settings: Settings) {
@@ -25,7 +25,7 @@ final class Composition {
         panels = PanelController(
             settings: settings, session: session, delivery: delivery, autoTyper: autoTyper)
         statusItem = StatusItemController(
-            settings: settings, panels: panels, shortcuts: shortcuts, updates: updates,
+            settings: settings, panels: panels, shortcuts: shortcuts, updater: updater,
             delivery: delivery)
         hotkeys.handler = { [panels] in panels.showAtCursor() }
     }

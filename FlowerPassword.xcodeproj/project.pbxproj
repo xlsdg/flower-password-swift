@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		FA0000000000000000000013 /* FlowerPasswordCore in Frameworks */ = {isa = PBXBuildFile; productRef = FA0000000000000000000012 /* FlowerPasswordCore */; };
 		FA0000000000000000000023 /* FlowerPasswordDomain in Frameworks */ = {isa = PBXBuildFile; productRef = FA0000000000000000000022 /* FlowerPasswordDomain */; };
+		FA0000000000000000000024 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = FA0000000000000000000029 /* Sparkle */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -60,6 +61,7 @@
 			files = (
 				FA0000000000000000000013 /* FlowerPasswordCore in Frameworks */,
 				FA0000000000000000000023 /* FlowerPasswordDomain in Frameworks */,
+				FA0000000000000000000024 /* Sparkle in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -113,6 +115,7 @@
 			packageProductDependencies = (
 				FA0000000000000000000012 /* FlowerPasswordCore */,
 				FA0000000000000000000022 /* FlowerPasswordDomain */,
+				FA0000000000000000000029 /* Sparkle */,
 			);
 			productName = FlowerPassword;
 			productReference = FA0000000000000000000004 /* FlowerPassword.app */;
@@ -170,6 +173,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				FA0000000000000000000011 /* XCLocalSwiftPackageReference "FlowerPasswordCore" */,
+				FA0000000000000000000028 /* XCRemoteSwiftPackageReference "Sparkle" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = FA0000000000000000000003 /* Products */;
@@ -337,7 +341,6 @@
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 10;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = FlowerPassword/Info.plist;
@@ -360,7 +363,6 @@
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 10;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = FlowerPassword/Info.plist;
@@ -441,6 +443,17 @@
 		};
 /* End XCLocalSwiftPackageReference section */
 
+/* Begin XCRemoteSwiftPackageReference section */
+		FA0000000000000000000028 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = exactVersion;
+				version = 2.10.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
 /* Begin XCSwiftPackageProductDependency section */
 		FA0000000000000000000012 /* FlowerPasswordCore */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -449,6 +462,11 @@
 		FA0000000000000000000022 /* FlowerPasswordDomain */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = FlowerPasswordDomain;
+		};
+		FA0000000000000000000029 /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = FA0000000000000000000028 /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
