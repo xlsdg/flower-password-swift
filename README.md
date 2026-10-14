@@ -48,7 +48,7 @@ xattr -dr com.apple.quarantine /Applications/FlowerPassword.app
 
 ### Updates
 
-"Check for Updates" in the menu installs new versions in place through [Sparkle](https://sparkle-project.org): it reads the `appcast.xml` attached to the latest GitHub release, verifies the archive against an Ed25519 public key bundled with the app, swaps itself out, and relaunches. In-app updates are not quarantined, so the Gatekeeper approval above is only ever needed once. Releases before the Sparkle switch cannot update in place: install the first Sparkle release manually.
+"Check for Updates" in the menu installs new versions in place through [Sparkle](https://sparkle-project.org): it reads the `appcast.xml` attached to the latest GitHub release, verifies the archive against an Ed25519 public key bundled with the app, swaps itself out, and relaunches. In-app updates are not quarantined, so the Gatekeeper approval above is only ever needed once. Releases before 1.2.27 cannot update in place: install 1.2.27 or later manually once.
 
 ## Usage
 
