@@ -93,15 +93,11 @@ final class PanelController: NSObject, NSWindowDelegate {
     private func show(topLeft: NSPoint, on screen: NSScreen?) {
         delivery.capturePreviousApp()
         let browserURL = BrowserURLReader.activeTabURL(of: NSWorkspace.shared.frontmostApplication)
-        var point = topLeft
-        if let visible = screen?.visibleFrame {
-            // Push inside the right/bottom edges first; the left/top clamps
-            // run last so they win when the work area is too small.
-            point.x = min(point.x, visible.maxX - PanelMetrics.width)
-            point.y = max(point.y, visible.minY + PanelMetrics.height)
-            point.x = max(point.x, visible.minX)
-            point.y = min(point.y, visible.maxY)
-        }
+        let point = screen.map {
+            PanelPlacement.clampedTopLeft(
+                topLeft, size: CGSize(width: PanelMetrics.width, height: PanelMetrics.height),
+                in: $0.visibleFrame)
+        } ?? topLeft
         panel.setFrameTopLeftPoint(point)
         // Activating (invisible for an accessory app — it owns no menu bar)
         // keeps text-field focus and secure input reliable.

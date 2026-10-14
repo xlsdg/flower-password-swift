@@ -338,81 +338,46 @@ final class PanelFormView: NSView, NSTextFieldDelegate {
 
     // MARK: - Layout
 
-    private enum Metrics {
-        static let pad: CGFloat = 10
-        static let spacing: CGFloat = 10
-        static let rowHeight: CGFloat = 32
-        static let fieldInset: CGFloat = 6
-        static let closeSize: CGFloat = 16
-        static let lengthWidth: CGFloat = 64
-    }
-
     override func layout() {
         super.layout()
         layoutForm()
     }
 
     private func layoutForm() {
-        let pad = Metrics.pad
-        let width = bounds.width - pad * 2
-        var y = pad
-
-        let titleHeight = ceil(titleLabel.cell?.cellSize.height ?? 0)
-        titleLabel.frame = NSRect(
-            x: pad, y: y, width: width - Metrics.closeSize - 4, height: titleHeight)
-        closeButton.frame = NSRect(
-            x: pad + width - Metrics.closeSize,
-            y: y + (titleHeight - Metrics.closeSize) / 2,
-            width: Metrics.closeSize, height: Metrics.closeSize)
-        y += titleHeight + Metrics.spacing
-
-        layoutField(passwordField, in: passwordContainer, frame: NSRect(x: pad, y: y, width: width, height: Metrics.rowHeight))
-        y += Metrics.rowHeight + Metrics.spacing
-        layoutField(keyField, in: keyContainer, frame: NSRect(x: pad, y: y, width: width, height: Metrics.rowHeight))
-        y += Metrics.rowHeight + Metrics.spacing
-
-        let generateWidth = width - Metrics.lengthWidth
-        generateButton.frame = NSRect(x: pad, y: y, width: generateWidth, height: Metrics.rowHeight)
-        lengthButton.frame = NSRect(
-            x: pad + generateWidth, y: y, width: Metrics.lengthWidth, height: Metrics.rowHeight)
-        // Hairline divider between the button and the length select.
-        lengthDivider.frame = NSRect(x: pad + generateWidth, y: y, width: 1, height: Metrics.rowHeight)
-        y += Metrics.rowHeight + Metrics.spacing
-
-        // -1pt overlap joins the two middle borders into a single hairline.
-        let splitWidth = (width + 1) / 2
-        layoutField(prefixField, in: prefixContainer, frame: NSRect(x: pad, y: y, width: splitWidth, height: Metrics.rowHeight))
-        layoutField(suffixField, in: suffixContainer, frame: NSRect(x: pad + splitWidth - 1, y: y, width: splitWidth, height: Metrics.rowHeight))
-        y += Metrics.rowHeight + Metrics.spacing
-
-        for label in [hintPasswordLabel, hintKeyLabel] {
-            let bounds = NSRect(x: 0, y: 0, width: width, height: .greatestFiniteMagnitude)
-            let height = ceil(label.cell?.cellSize(forBounds: bounds).height ?? 0)
-            label.frame = NSRect(x: pad, y: y, width: width, height: height)
-            y += height + Metrics.spacing
+        let width = bounds.width - PanelLayout.Metrics.pad * 2
+        let hintBounds = NSRect(x: 0, y: 0, width: width, height: .greatestFiniteMagnitude)
+        func hintHeight(_ label: NSTextField) -> CGFloat {
+            label.cell?.cellSize(forBounds: hintBounds).height ?? 0
         }
+        let measurements = PanelLayout.Measurements(
+            titleHeight: titleLabel.cell?.cellSize.height ?? 0,
+            hintPasswordHeight: hintHeight(hintPasswordLabel),
+            hintKeyHeight: hintHeight(hintKeyLabel),
+            websiteLabelSize: websiteLabel.cell?.cellSize ?? .zero,
+            websiteLabelTextWidth: websiteLabel.attributedStringValue.size().width,
+            websiteButtonSize: websiteButton.cell?.cellSize ?? .zero,
+            websiteButtonTextWidth: websiteButton.attributedTitle.size().width)
+        let frames = PanelLayout.place(width: bounds.width, measurements: measurements)
 
-        let labelSize = websiteLabel.cell?.cellSize ?? .zero
-        let linkSize = websiteButton.cell?.cellSize ?? .zero
-        // Both cells pad their text; align the link's title with where the
-        // label's text ends, as if the two were one line of inline text.
-        let labelTextEnd = (labelSize.width + websiteLabel.attributedStringValue.size().width) / 2
-        let linkPadding = (linkSize.width - websiteButton.attributedTitle.size().width) / 2
-        let linkX = ceil(labelTextEnd - linkPadding)
-        websiteLabel.frame = NSRect(x: pad, y: y, width: ceil(labelSize.width), height: ceil(labelSize.height))
-        websiteButton.frame = NSRect(
-            x: pad + linkX, y: y, width: min(ceil(linkSize.width), width - linkX),
-            height: ceil(labelSize.height))
-    }
-
-    private func layoutField(_ field: NSTextField, in container: NSView, frame: NSRect) {
-        container.frame = frame
-        let fieldHeight = ceil(field.cell?.cellSize.height ?? 0)
-        field.frame = NSRect(
-            x: Metrics.fieldInset,
-            y: (frame.height - fieldHeight) / 2,
-            width: frame.width - Metrics.fieldInset * 2,
-            height: fieldHeight)
+        titleLabel.frame = frames.title
+        closeButton.frame = frames.close
+        generateButton.frame = frames.generate
+        lengthButton.frame = frames.length
+        lengthDivider.frame = frames.lengthDivider
+        hintPasswordLabel.frame = frames.hintPassword
+        hintKeyLabel.frame = frames.hintKey
+        websiteLabel.frame = frames.websiteLabel
+        websiteButton.frame = frames.websiteButton
+        for (field, container, frame) in [
+            (passwordField, passwordContainer, frames.password),
+            (keyField, keyContainer, frames.key),
+            (prefixField, prefixContainer, frames.prefix),
+            (suffixField, suffixContainer, frames.suffix),
+        ] as [(NSTextField, NSView, CGRect)] {
+            container.frame = frame
+            field.frame = PanelLayout.fieldFrame(
+                in: frame, fieldHeight: field.cell?.cellSize.height ?? 0)
+        }
     }
 
     // MARK: - Actions
