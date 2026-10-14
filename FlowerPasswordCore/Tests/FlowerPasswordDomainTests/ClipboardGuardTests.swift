@@ -31,13 +31,13 @@ struct ClipboardGuardTests {
     @Test("a second copy restarts the countdown instead of clearing early")
     func recopyRestarts() async throws {
         let pasteboard = FakeClipboardStore()
-        let guardian = ClipboardGuard(pasteboard: pasteboard, clearDelay: .milliseconds(150))
+        let guardian = ClipboardGuard(pasteboard: pasteboard, clearDelay: .milliseconds(600))
         guardian.copy("first")
-        try await Task.sleep(for: .milliseconds(100))
+        try await Task.sleep(for: .milliseconds(400))
         guardian.copy("second")
-        try await Task.sleep(for: .milliseconds(100))
+        try await Task.sleep(for: .milliseconds(400))
         #expect(pasteboard.text == "second")
-        try await Task.sleep(for: settle)
+        try await Task.sleep(for: .milliseconds(600))
         #expect(pasteboard.text == nil)
     }
 
