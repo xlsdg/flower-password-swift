@@ -9,17 +9,17 @@ final class StatusItemController: NSObject {
     private let statusItem: NSStatusItem
     private let settings: Settings
     private let panels: PanelController
-    private let hotkeys: HotkeyManager
+    private let shortcuts: ShortcutChanger
     private let updates: UpdateChecker
     private let delivery: PasswordDelivery
 
     init(
-        settings: Settings, panels: PanelController, hotkeys: HotkeyManager,
+        settings: Settings, panels: PanelController, shortcuts: ShortcutChanger,
         updates: UpdateChecker, delivery: PasswordDelivery
     ) {
         self.settings = settings
         self.panels = panels
-        self.hotkeys = hotkeys
+        self.shortcuts = shortcuts
         self.updates = updates
         self.delivery = delivery
         self.statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
@@ -88,7 +88,7 @@ final class StatusItemController: NSObject {
             })
         menu.addItem(
             picker(String(localized: .globalShortcut), selected: settings.shortcut, name: \.displayName) { [weak self] option in
-                self?.changeShortcut(to: option)
+                self?.shortcuts.change(to: option)
             })
         menu.addItem(.separator())
 
@@ -133,22 +133,6 @@ final class StatusItemController: NSObject {
             try AutoLaunch.set(!AutoLaunch.isEnabled)
         } catch {
             Dialogs.autoLaunchFailed(detail: error.localizedDescription)
-        }
-    }
-
-    /// The new choice is registered before it is persisted; on failure the
-    /// previous shortcut is restored. Restoring can itself fail (the old
-    /// shortcut may have been taken in the meantime), in which case the
-    /// user is left with no hotkey and told so, rather than left guessing.
-    private func changeShortcut(to option: ShortcutOption) {
-        guard option != settings.shortcut else { return }
-        if hotkeys.register(option) {
-            settings.shortcut = option
-            return
-        }
-        Dialogs.shortcutRegistrationFailed(shortcut: option.displayName)
-        if !hotkeys.register(settings.shortcut) {
-            Dialogs.shortcutRegistrationFailed(shortcut: settings.shortcut.displayName)
         }
     }
 

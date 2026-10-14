@@ -8,15 +8,17 @@ final class PanelController: NSObject, NSWindowDelegate {
     private let settings: Settings
     private let session: Session
     private let delivery: PasswordDelivery
+    private let autoTyper: AutoTypeService
 
     /// Set every time the panel hides, used internally to distinguish
     /// "just hid due to focus loss from this very click" from a fresh toggle.
     private var lastHiddenAt = Date.distantPast
 
-    init(settings: Settings, session: Session, delivery: PasswordDelivery) {
+    init(settings: Settings, session: Session, delivery: PasswordDelivery, autoTyper: AutoTypeService) {
         self.settings = settings
         self.session = session
         self.delivery = delivery
+        self.autoTyper = autoTyper
         self.panel = FloatingPanel()
         super.init()
 
@@ -90,7 +92,7 @@ final class PanelController: NSObject, NSWindowDelegate {
     }
 
     private func show(topLeft: NSPoint, on screen: NSScreen?) {
-        delivery.capturePreviousApp()
+        autoTyper.capturePreviousApp()
         let browserURL = BrowserURLReader.activeTabURL(of: NSWorkspace.shared.frontmostApplication)
         let point = screen.map {
             PanelPlacement.clampedTopLeft(
@@ -105,23 +107,8 @@ final class PanelController: NSObject, NSWindowDelegate {
         // After ordering front: the first prefill of a session may block on
         // the Public Suffix List still parsing, and that must not delay the
         // panel appearing.
-        prefillKey(browserURL: browserURL)
+        session.prefillKey(from: [browserURL, NSPasteboard.general.string(forType: .string)])
         session.requestFocus()
-    }
-
-    /// On every show, the first absolute URL (frontmost browser tab, then
-    /// clipboard) whose host has a recognized public suffix replaces the
-    /// distinction code with its registrable label ("google" from
-    /// www.google.co.uk).
-    private func prefillKey(browserURL: String?) {
-        let candidates = [browserURL, NSPasteboard.general.string(forType: .string)]
-        guard
-            let label = candidates.lazy.compactMap({ $0 }).compactMap({
-                PublicSuffix.shared.registrableLabel(fromURLText: $0)
-            }).first,
-            label != session.key
-        else { return }
-        session.key = label
     }
 
     func windowDidResignKey(_ notification: Notification) {

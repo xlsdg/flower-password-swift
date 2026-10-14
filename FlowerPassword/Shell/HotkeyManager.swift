@@ -7,7 +7,7 @@ import FlowerPasswordDomain
 /// NSEvent global monitors it needs no accessibility/input-monitoring
 /// permission, so the shortcut works on first launch without any prompts.
 /// Lives for the whole process, so its Carbon registrations are never torn down.
-final class HotkeyManager {
+final class HotkeyManager: HotkeyRegistering {
     var handler: (() -> Void)?
 
     private var hotKeyRef: EventHotKeyRef?

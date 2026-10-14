@@ -1,10 +1,12 @@
 import AppKit
 import ApplicationServices
 
+import FlowerPasswordDomain
+
 /// Types a generated password directly into whatever text field had focus
 /// before the panel opened, bypassing the clipboard entirely. Requires
 /// Accessibility permission (CGEvent posting is silently ignored otherwise).
-final class AutoTypeService {
+final class AutoTypeService: AutoTyper {
     /// CGEvent's keyboardSetUnicodeString caps a single event's payload;
     /// long passwords are split into chunks of this size.
     private static let chunkSize = 20
@@ -26,6 +28,10 @@ final class AutoTypeService {
         // The literal value of kAXTrustedCheckOptionPrompt, a mutable C global Swift 6 rejects.
         let options = ["AXTrustedCheckOptionPrompt": prompt] as CFDictionary
         return AXIsProcessTrustedWithOptions(options)
+    }
+
+    func isTrusted(prompt: Bool) -> Bool {
+        Self.isTrusted(prompt: prompt)
     }
 
     func type(_ text: String, fallback: @escaping @MainActor () -> Void) {

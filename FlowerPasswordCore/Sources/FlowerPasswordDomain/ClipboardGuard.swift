@@ -8,12 +8,12 @@ import Foundation
 public final class ClipboardGuard: Clipboard {
     public static let defaultClearDelay: Duration = .seconds(10)
 
-    private let pasteboard: Pasteboard
+    private let pasteboard: ClipboardStore
     private let clearDelay: Duration
     private var pendingClear: Task<Void, Never>?
     private var ownedChangeCount = -1
 
-    public init(pasteboard: Pasteboard, clearDelay: Duration = ClipboardGuard.defaultClearDelay) {
+    public init(pasteboard: ClipboardStore, clearDelay: Duration = ClipboardGuard.defaultClearDelay) {
         self.pasteboard = pasteboard
         self.clearDelay = clearDelay
     }

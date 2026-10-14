@@ -3,7 +3,7 @@ import Foundation
 @testable import FlowerPasswordDomain
 
 @MainActor
-final class FakePasteboard: Pasteboard {
+final class FakeClipboardStore: ClipboardStore {
     private(set) var changeCount = 0
     private(set) var text: String?
 

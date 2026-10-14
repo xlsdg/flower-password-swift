@@ -10,7 +10,7 @@ struct ClipboardGuardTests {
 
     @Test("clears the password after the delay")
     func clearsAfterDelay() async throws {
-        let pasteboard = FakePasteboard()
+        let pasteboard = FakeClipboardStore()
         let guardian = ClipboardGuard(pasteboard: pasteboard, clearDelay: delay)
         guardian.copy("secret")
         #expect(pasteboard.text == "secret")
@@ -20,7 +20,7 @@ struct ClipboardGuardTests {
 
     @Test("leaves the pasteboard alone when something else was copied meanwhile")
     func respectsForeignCopy() async throws {
-        let pasteboard = FakePasteboard()
+        let pasteboard = FakeClipboardStore()
         let guardian = ClipboardGuard(pasteboard: pasteboard, clearDelay: delay)
         guardian.copy("secret")
         pasteboard.externalCopy("user data")
@@ -30,7 +30,7 @@ struct ClipboardGuardTests {
 
     @Test("a second copy restarts the countdown instead of clearing early")
     func recopyRestarts() async throws {
-        let pasteboard = FakePasteboard()
+        let pasteboard = FakeClipboardStore()
         let guardian = ClipboardGuard(pasteboard: pasteboard, clearDelay: .milliseconds(150))
         guardian.copy("first")
         try await Task.sleep(for: .milliseconds(100))
@@ -43,7 +43,7 @@ struct ClipboardGuardTests {
 
     @Test("clearIfOwned clears immediately, as on quit")
     func clearOnQuit() {
-        let pasteboard = FakePasteboard()
+        let pasteboard = FakeClipboardStore()
         let guardian = ClipboardGuard(pasteboard: pasteboard)
         guardian.copy("secret")
         guardian.clearIfOwned()
@@ -52,7 +52,7 @@ struct ClipboardGuardTests {
 
     @Test("clearIfOwned does not touch a foreign copy")
     func quitKeepsForeignCopy() {
-        let pasteboard = FakePasteboard()
+        let pasteboard = FakeClipboardStore()
         let guardian = ClipboardGuard(pasteboard: pasteboard)
         guardian.copy("secret")
         pasteboard.externalCopy("user data")

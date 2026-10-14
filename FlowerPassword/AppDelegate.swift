@@ -4,11 +4,7 @@ import FlowerPasswordCore
 import FlowerPasswordDomain
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
-    private var delivery: PasswordDelivery!
-    private var panelController: PanelController!
-    private var statusItemController: StatusItemController!
-    private var hotkeyManager: HotkeyManager!
-    private var updateChecker: UpdateChecker!
+    private var composition: Composition?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         installEditMenu()
@@ -23,26 +19,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let defaults = uiTesting ? Self.uiTestingDefaults(arguments) : .standard
 
         let settings = Settings(defaults: defaults)
-        let session = Session()
         settings.theme.apply()
 
-        delivery = PasswordDelivery(settings: settings)
-        panelController = PanelController(settings: settings, session: session, delivery: delivery)
-        hotkeyManager = HotkeyManager()
-        updateChecker = UpdateChecker()
-        statusItemController = StatusItemController(
-            settings: settings,
-            panels: panelController,
-            hotkeys: hotkeyManager,
-            updates: updateChecker,
-            delivery: delivery
-        )
-
-        hotkeyManager.handler = { [weak self] in
-            self?.panelController.showAtCursor()
-        }
-        if !uiTesting, !hotkeyManager.register(settings.shortcut) {
-            Dialogs.shortcutRegistrationFailed(shortcut: settings.shortcut.displayName)
+        let composition = Composition(settings: settings)
+        self.composition = composition
+        if !uiTesting {
+            composition.shortcuts.registerCurrent()
         }
 
         Task.detached(priority: .utility) {
@@ -75,7 +57,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationWillTerminate(_ notification: Notification) {
-        delivery?.clearClipboardIfOwned()
+        composition?.clearClipboardIfOwned()
     }
 
     /// A minimal, invisible main menu with just the Edit menu. The app is

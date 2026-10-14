@@ -2,7 +2,7 @@
 /// AppKit-backed implementations; tests supply fakes.
 
 @MainActor
-public protocol Pasteboard: AnyObject {
+public protocol ClipboardStore: AnyObject {
     var changeCount: Int { get }
     /// Replaces the contents with a concealed text item and returns the new change count.
     func replaceWithConcealedText(_ text: String) -> Int
