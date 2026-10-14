@@ -95,7 +95,7 @@ xcodebuild test -project FlowerPassword.xcodeproj -scheme FlowerPassword
 xcodebuild -project FlowerPassword.xcodeproj -scheme FlowerPassword -configuration Release build
 ```
 
-Only system frameworks are used (AppKit, CryptoKit, Carbon, ServiceManagement).
+Apart from Sparkle, only system frameworks are used (AppKit, CryptoKit, Carbon, ServiceManagement, Observation).
 
 ## License
 
