@@ -159,6 +159,7 @@ final class FlowerPasswordUITests: XCTestCase {
         app.terminate()
         app.launchArguments = ["--ui-testing", "--keep-defaults"]
         app.launch()
+        XCTAssertTrue(statusItem.waitForExistence(timeout: 5))
         openPanel()
         XCTAssertEqual(passwordField.placeholderValue, "记忆密码")
         XCTAssertEqual(lengthButton.value as? String, "16位")
@@ -191,6 +192,7 @@ final class FlowerPasswordUITests: XCTestCase {
         app.terminate()
         app.launchArguments.append("--keep-defaults")
         app.launch()
+        XCTAssertTrue(statusItem.waitForExistence(timeout: 5))
         openPanel()
         XCTAssertEqual(prefixField.value as? String, "pre-")
         XCTAssertEqual(suffixField.value as? String, "-suf")
