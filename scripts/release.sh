@@ -38,6 +38,19 @@ if [ -n "${SIGNING_IDENTITY:-}" ]; then
 fi
 codesign --verify --deep --strict "$APP"
 
+# Debug builds and codesign --verify both pass when the hardened runtime refuses
+# to load Sparkle.framework; only launching the signed Release bundle shows it.
+# --keep-defaults leaves an installed copy's settings alone.
+"$APP/Contents/MacOS/FlowerPassword" --ui-testing --keep-defaults &
+PID=$!
+sleep 5
+if ! kill -0 "$PID" 2>/dev/null; then
+  echo "Release app exited within 5 seconds of launch" >&2
+  exit 1
+fi
+kill "$PID"
+wait "$PID" 2>/dev/null || true
+
 # Read the version from the built product, not the pbxproj: the archive name
 # must match what the shipped app reports, because release.yml checks it
 # against the tag.
