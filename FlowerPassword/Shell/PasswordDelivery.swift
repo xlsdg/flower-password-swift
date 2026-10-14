@@ -1,13 +1,15 @@
 import AppKit
 
+import FlowerPasswordDomain
+
 @MainActor
 final class PasswordDelivery {
-    private let state: AppState
+    private let settings: Settings
     private let autoType: AutoTypeService
     private let clipboard: ClipboardService
 
-    init(state: AppState) {
-        self.state = state
+    init(settings: Settings) {
+        self.settings = settings
         self.autoType = AutoTypeService()
         self.clipboard = ClipboardService()
     }
@@ -16,7 +18,7 @@ final class PasswordDelivery {
     /// is live, clipboard otherwise. Checked every time it is read, so the
     /// menu checkmark never claims "on" once the system revokes trust.
     var willAutoType: Bool {
-        state.autoType && AutoTypeService.isTrusted(prompt: false)
+        settings.autoType && AutoTypeService.isTrusted(prompt: false)
     }
 
     func deliver(_ password: String) {
@@ -43,14 +45,14 @@ final class PasswordDelivery {
     /// Flips from the *displayed* state, so a revoked trust re-prompts.
     func toggleAutoType() {
         guard !willAutoType else {
-            state.autoType = false
+            settings.autoType = false
             return
         }
         guard AutoTypeService.isTrusted(prompt: true) else {
             Dialogs.autoTypeNeedsPermission()
             return
         }
-        state.autoType = true
+        settings.autoType = true
     }
 
     func capturePreviousApp() {

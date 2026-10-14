@@ -1,19 +1,22 @@
 import AppKit
 
 import FlowerPasswordCore
+import FlowerPasswordDomain
 
 @MainActor
 final class PanelController: NSObject, NSWindowDelegate {
     private let panel: FloatingPanel
-    private let state: AppState
+    private let settings: Settings
+    private let session: Session
     private let delivery: PasswordDelivery
 
     /// Set every time the panel hides, used internally to distinguish
     /// "just hid due to focus loss from this very click" from a fresh toggle.
     private var lastHiddenAt = Date.distantPast
 
-    init(state: AppState, delivery: PasswordDelivery) {
-        self.state = state
+    init(settings: Settings, session: Session, delivery: PasswordDelivery) {
+        self.settings = settings
+        self.session = session
         self.delivery = delivery
         self.panel = FloatingPanel()
         super.init()
@@ -43,7 +46,7 @@ final class PanelController: NSObject, NSWindowDelegate {
         container.layer?.cornerCurve = .continuous
         container.layer?.masksToBounds = true
 
-        let formView = PanelFormView(state: state, actions: actions)
+        let formView = PanelFormView(settings: settings, session: session, actions: actions)
         for (child, parent) in [(effectView, container), (formView, effectView)] as [(NSView, NSView)] {
             child.frame = parent.bounds
             child.autoresizingMask = [.width, .height]
@@ -108,7 +111,7 @@ final class PanelController: NSObject, NSWindowDelegate {
         // the Public Suffix List still parsing, and that must not delay the
         // panel appearing.
         prefillKey(browserURL: browserURL)
-        state.requestFocus()
+        session.requestFocus()
     }
 
     /// On every show, the first absolute URL (frontmost browser tab, then
@@ -121,9 +124,9 @@ final class PanelController: NSObject, NSWindowDelegate {
             let label = candidates.lazy.compactMap({ $0 }).compactMap({
                 PublicSuffix.shared.registrableLabel(fromURLText: $0)
             }).first,
-            label != state.key
+            label != session.key
         else { return }
-        state.key = label
+        session.key = label
     }
 
     func windowDidResignKey(_ notification: Notification) {

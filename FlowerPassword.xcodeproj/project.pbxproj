@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		FA0000000000000000000013 /* FlowerPasswordCore in Frameworks */ = {isa = PBXBuildFile; productRef = FA0000000000000000000012 /* FlowerPasswordCore */; };
+		FA0000000000000000000023 /* FlowerPasswordDomain in Frameworks */ = {isa = PBXBuildFile; productRef = FA0000000000000000000022 /* FlowerPasswordDomain */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -58,6 +59,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				FA0000000000000000000013 /* FlowerPasswordCore in Frameworks */,
+				FA0000000000000000000023 /* FlowerPasswordDomain in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -110,6 +112,7 @@
 			name = FlowerPassword;
 			packageProductDependencies = (
 				FA0000000000000000000012 /* FlowerPasswordCore */,
+				FA0000000000000000000022 /* FlowerPasswordDomain */,
 			);
 			productName = FlowerPassword;
 			productReference = FA0000000000000000000004 /* FlowerPassword.app */;
@@ -440,6 +443,10 @@
 		FA0000000000000000000012 /* FlowerPasswordCore */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = FlowerPasswordCore;
+		};
+		FA0000000000000000000022 /* FlowerPasswordDomain */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = FlowerPasswordDomain;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

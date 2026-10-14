@@ -1,6 +1,7 @@
 import AppKit
 
 import FlowerPasswordCore
+import FlowerPasswordDomain
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
@@ -22,15 +23,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let uiTesting = arguments.contains("--ui-testing")
         let defaults = uiTesting ? Self.uiTestingDefaults(arguments) : .standard
 
-        let state = AppState(defaults: defaults)
-        state.applyAppearance()
+        let settings = Settings(defaults: defaults)
+        let session = Session()
+        settings.theme.apply()
 
-        delivery = PasswordDelivery(state: state)
-        panelController = PanelController(state: state, delivery: delivery)
+        delivery = PasswordDelivery(settings: settings)
+        panelController = PanelController(settings: settings, session: session, delivery: delivery)
         hotkeyManager = HotkeyManager()
         updateChecker = UpdateChecker()
         statusItemController = StatusItemController(
-            state: state,
+            settings: settings,
             panels: panelController,
             hotkeys: hotkeyManager,
             updates: updateChecker,
@@ -40,8 +42,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         hotkeyManager.handler = { [weak self] in
             self?.panelController.showAtCursor()
         }
-        if !uiTesting, !hotkeyManager.register(state.shortcut) {
-            Dialogs.shortcutRegistrationFailed(shortcut: state.shortcut.displayName)
+        if !uiTesting, !hotkeyManager.register(settings.shortcut) {
+            Dialogs.shortcutRegistrationFailed(shortcut: settings.shortcut.displayName)
         }
 
         Task.detached(priority: .utility) {

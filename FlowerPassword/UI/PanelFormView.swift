@@ -2,6 +2,7 @@ import AppKit
 import Observation
 
 import FlowerPasswordCore
+import FlowerPasswordDomain
 
 /// Actions the form triggers on its AppKit host.
 @MainActor
@@ -14,11 +15,12 @@ struct PanelActions {
 /// generate-button + length-select row, a joined prefix/suffix row, and
 /// three bulleted hints.
 ///
-/// Reads `AppState` through `withObservationTracking`, funneling every
+/// Reads `Settings` and `Session` through `withObservationTracking`, funneling every
 /// change (text, generated code, theme, focus token) through a single
 /// `render()` pass; edits flow back via `NSTextFieldDelegate`.
 final class PanelFormView: NSView, NSTextFieldDelegate {
-    private let state: AppState
+    private let settings: Settings
+    private let session: Session
     private let actions: PanelActions
 
     private let titleLabel = NSTextField(labelWithString: "")
@@ -39,7 +41,7 @@ final class PanelFormView: NSView, NSTextFieldDelegate {
     private let websiteLabel = NSTextField(labelWithString: "")
     private let websiteButton = LinkButton()
 
-    private var focusedField: AppState.FocusField?
+    private var focusedField: FocusField?
     private var isHoveringGenerate = false
     private var lastFocusToken: Int
 
@@ -50,10 +52,11 @@ final class PanelFormView: NSView, NSTextFieldDelegate {
     /// whatever happens to sit behind the translucent panel.
     private static let forcesOpaqueBackground = ProcessInfo.processInfo.arguments.contains("--ui-testing")
 
-    init(state: AppState, actions: PanelActions) {
-        self.state = state
+    init(settings: Settings, session: Session, actions: PanelActions) {
+        self.settings = settings
+        self.session = session
         self.actions = actions
-        self.lastFocusToken = state.focusToken
+        self.lastFocusToken = session.focusToken
         super.init(
             frame: NSRect(x: 0, y: 0, width: PanelMetrics.width, height: PanelMetrics.height))
         wantsLayer = true
@@ -174,7 +177,7 @@ final class PanelFormView: NSView, NSTextFieldDelegate {
 
     private func configureField(
         _ field: NSTextField, in container: NSView, cornerMask: CACornerMask,
-        focus: AppState.FocusField
+        focus: FocusField
     ) {
         field.isBordered = false
         field.isBezeled = false
@@ -201,7 +204,7 @@ final class PanelFormView: NSView, NSTextFieldDelegate {
 
     // MARK: - Rendering
 
-    /// Re-runs `render()` on every AppState mutation. `onChange` fires on
+    /// Re-runs `render()` on every Settings or Session mutation. `onChange` fires on
     /// willSet, so the re-render is deferred a tick to read the new values.
     private func observeState() {
         withObservationTracking {
@@ -227,10 +230,10 @@ final class PanelFormView: NSView, NSTextFieldDelegate {
 
         closeButton.attributedTitle = Self.buttonTitle("×", color: palette.buttonText)
         closeButton.layer?.backgroundColor = palette.buttonPrimary.cgColor
-        setValueIfChanged(passwordField, state.password)
-        setValueIfChanged(keyField, state.key)
-        setValueIfChanged(prefixField, state.prefix)
-        setValueIfChanged(suffixField, state.suffix)
+        setValueIfChanged(passwordField, session.password)
+        setValueIfChanged(keyField, session.key)
+        setValueIfChanged(prefixField, settings.prefix)
+        setValueIfChanged(suffixField, settings.suffix)
         for field in [passwordField, keyField, prefixField, suffixField] {
             field.textColor = palette.inputText
         }
@@ -250,8 +253,8 @@ final class PanelFormView: NSView, NSTextFieldDelegate {
         generateButton.layer?.backgroundColor =
             (isHoveringGenerate ? palette.buttonPrimaryHover : palette.buttonPrimary).cgColor
         // Clicking does nothing until both inputs are filled; say so without dimming the brand button.
-        generateButton.setAccessibilityEnabled(!state.generatedCode.isEmpty)
-        let length = lengthLabel(state.passwordLength)
+        generateButton.setAccessibilityEnabled(!session.generatedCode(using: settings).isEmpty)
+        let length = lengthLabel(settings.passwordLength)
         lengthButton.attributedTitle = Self.buttonTitle(length, color: palette.buttonText)
         lengthButton.setAccessibilityValue(length)
         lengthButton.layer?.backgroundColor = palette.buttonPrimary.cgColor
@@ -264,9 +267,9 @@ final class PanelFormView: NSView, NSTextFieldDelegate {
             string: Self.websiteURL.host() ?? Self.websiteURL.absoluteString,
             attributes: [.font: NSFont.systemFont(ofSize: 12), .foregroundColor: palette.link])
 
-        if state.focusToken != lastFocusToken {
-            lastFocusToken = state.focusToken
-            window?.makeFirstResponder(field(for: state.focusField))
+        if session.focusToken != lastFocusToken {
+            lastFocusToken = session.focusToken
+            window?.makeFirstResponder(field(for: session.focusField))
         }
 
         layoutForm()
@@ -281,14 +284,14 @@ final class PanelFormView: NSView, NSTextFieldDelegate {
         }
     }
 
-    private var fieldContainers: [(NSView, AppState.FocusField)] {
+    private var fieldContainers: [(NSView, FocusField)] {
         [
             (passwordContainer, .password), (keyContainer, .key),
             (prefixContainer, .prefix), (suffixContainer, .suffix),
         ]
     }
 
-    private func field(for focus: AppState.FocusField) -> NSTextField {
+    private func field(for focus: FocusField) -> NSTextField {
         switch focus {
         case .password: passwordField
         case .key: keyField
@@ -300,7 +303,7 @@ final class PanelFormView: NSView, NSTextFieldDelegate {
     /// Shows the localized call-to-action until both inputs are filled,
     /// then the masked code — revealed in full while hovered.
     private func generateButtonLabel() -> String {
-        let code = state.generatedCode
+        let code = session.generatedCode(using: settings)
         if code.isEmpty {
             return String(localized: .generatePassword)
         }
@@ -427,7 +430,7 @@ final class PanelFormView: NSView, NSTextFieldDelegate {
     }
 
     private func generateAndCopy() {
-        let code = state.generatedCode
+        let code = session.generatedCode(using: settings)
         guard !code.isEmpty else { return }
         actions.copyAndHide(code)
     }
@@ -442,15 +445,15 @@ final class PanelFormView: NSView, NSTextFieldDelegate {
                 title: lengthLabel(length), action: #selector(lengthSelected(_:)), keyEquivalent: "")
             item.target = self
             item.tag = length
-            item.state = length == state.passwordLength ? .on : .off
-            if length == state.passwordLength { selectedItem = item }
+            item.state = length == settings.passwordLength ? .on : .off
+            if length == settings.passwordLength { selectedItem = item }
             menu.addItem(item)
         }
         menu.popUp(positioning: selectedItem, at: .zero, in: lengthButton)
     }
 
     @objc private func lengthSelected(_ sender: NSMenuItem) {
-        state.passwordLength = sender.tag
+        settings.passwordLength = sender.tag
     }
 
     // MARK: - NSTextFieldDelegate
@@ -458,10 +461,10 @@ final class PanelFormView: NSView, NSTextFieldDelegate {
     func controlTextDidChange(_ notification: Notification) {
         guard let field = notification.object as? NSTextField else { return }
         switch field {
-        case passwordField: state.password = field.stringValue
-        case keyField: state.key = field.stringValue
-        case prefixField: state.prefix = field.stringValue
-        case suffixField: state.suffix = field.stringValue
+        case passwordField: session.password = field.stringValue
+        case keyField: session.key = field.stringValue
+        case prefixField: settings.prefix = field.stringValue
+        case suffixField: settings.suffix = field.stringValue
         default: break
         }
     }

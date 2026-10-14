@@ -1,22 +1,24 @@
 import AppKit
 
+import FlowerPasswordDomain
+
 /// The menu bar item: left-click toggles the panel below it, right-click
 /// hides the panel and pops the context menu. The menu is built fresh on
 /// every open, so checkmarks always reflect live state.
 @MainActor
 final class StatusItemController: NSObject {
     private let statusItem: NSStatusItem
-    private let state: AppState
+    private let settings: Settings
     private let panels: PanelController
     private let hotkeys: HotkeyManager
     private let updates: UpdateChecker
     private let delivery: PasswordDelivery
 
     init(
-        state: AppState, panels: PanelController, hotkeys: HotkeyManager,
+        settings: Settings, panels: PanelController, hotkeys: HotkeyManager,
         updates: UpdateChecker, delivery: PasswordDelivery
     ) {
-        self.state = state
+        self.settings = settings
         self.panels = panels
         self.hotkeys = hotkeys
         self.updates = updates
@@ -76,8 +78,9 @@ final class StatusItemController: NSObject {
         menu.addItem(.separator())
 
         menu.addItem(
-            picker(String(localized: .theme), selected: state.theme, name: \.title) { [weak self] mode in
-                self?.state.theme = mode
+            picker(String(localized: .theme), selected: settings.theme, name: \.title) { [weak self] mode in
+                self?.settings.theme = mode
+                mode.apply()
             })
         menu.addItem(
             picker(String(localized: .language), selected: LanguagePreference.current, name: \.title) {
@@ -85,7 +88,7 @@ final class StatusItemController: NSObject {
                 self?.changeLanguage(to: preference)
             })
         menu.addItem(
-            picker(String(localized: .globalShortcut), selected: state.shortcut, name: \.displayName) { [weak self] option in
+            picker(String(localized: .globalShortcut), selected: settings.shortcut, name: \.displayName) { [weak self] option in
                 self?.changeShortcut(to: option)
             })
         menu.addItem(.separator())
@@ -139,14 +142,14 @@ final class StatusItemController: NSObject {
     /// shortcut may have been taken in the meantime), in which case the
     /// user is left with no hotkey and told so, rather than left guessing.
     private func changeShortcut(to option: ShortcutOption) {
-        guard option != state.shortcut else { return }
+        guard option != settings.shortcut else { return }
         if hotkeys.register(option) {
-            state.shortcut = option
+            settings.shortcut = option
             return
         }
         Dialogs.shortcutRegistrationFailed(shortcut: option.displayName)
-        if !hotkeys.register(state.shortcut) {
-            Dialogs.shortcutRegistrationFailed(shortcut: state.shortcut.displayName)
+        if !hotkeys.register(settings.shortcut) {
+            Dialogs.shortcutRegistrationFailed(shortcut: settings.shortcut.displayName)
         }
     }
 
