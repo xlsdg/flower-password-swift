@@ -3,7 +3,6 @@ import AppKit
 import FlowerPasswordCore
 import FlowerPasswordDomain
 
-@MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var delivery: PasswordDelivery!
     private var panelController: PanelController!

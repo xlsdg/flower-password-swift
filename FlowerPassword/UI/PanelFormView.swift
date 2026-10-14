@@ -5,7 +5,6 @@ import FlowerPasswordCore
 import FlowerPasswordDomain
 
 /// Actions the form triggers on its AppKit host.
-@MainActor
 struct PanelActions {
     var copyAndHide: (String) -> Void
     var hide: () -> Void

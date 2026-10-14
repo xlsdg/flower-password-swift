@@ -4,7 +4,6 @@ import ApplicationServices
 /// Types a generated password directly into whatever text field had focus
 /// before the panel opened, bypassing the clipboard entirely. Requires
 /// Accessibility permission (CGEvent posting is silently ignored otherwise).
-@MainActor
 final class AutoTypeService {
     /// CGEvent's keyboardSetUnicodeString caps a single event's payload;
     /// long passwords are split into chunks of this size.

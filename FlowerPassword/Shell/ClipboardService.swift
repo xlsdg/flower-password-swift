@@ -4,7 +4,6 @@ import AppKit
 /// compares NSPasteboard.changeCount instead of re-reading the text: if
 /// anything else was copied in the meantime the count moved on and the
 /// pasteboard is left alone, without ever reading other apps' clipboard data.
-@MainActor
 final class ClipboardService {
     static let clearDelay: TimeInterval = 10
 

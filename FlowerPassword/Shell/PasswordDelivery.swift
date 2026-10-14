@@ -2,7 +2,6 @@ import AppKit
 
 import FlowerPasswordDomain
 
-@MainActor
 final class PasswordDelivery {
     private let settings: Settings
     private let autoType: AutoTypeService

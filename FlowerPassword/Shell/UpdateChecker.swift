@@ -2,7 +2,6 @@ import AppKit
 
 import FlowerPasswordCore
 
-@MainActor
 final class UpdateChecker {
     private var isChecking = false
 

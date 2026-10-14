@@ -5,7 +5,6 @@ import ApplicationServices
 /// browsers answer Apple Events (the system asks the user once per browser);
 /// Gecko browsers have no scripting dictionary, so their accessibility tree
 /// is read instead, only when Accessibility is already granted.
-@MainActor
 enum BrowserURLReader {
     private enum Source {
         case appleEvent(String)

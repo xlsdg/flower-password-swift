@@ -14,7 +14,6 @@ extension ThemeMode {
 
     /// A nil appearance follows the system; an explicit one pins every
     /// window (panel, alerts) to the chosen theme.
-    @MainActor
     func apply() {
         switch self {
         case .light: NSApp.appearance = NSAppearance(named: .aqua)

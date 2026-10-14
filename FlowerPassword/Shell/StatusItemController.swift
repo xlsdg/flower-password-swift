@@ -5,7 +5,6 @@ import FlowerPasswordDomain
 /// The menu bar item: left-click toggles the panel below it, right-click
 /// hides the panel and pops the context menu. The menu is built fresh on
 /// every open, so checkmarks always reflect live state.
-@MainActor
 final class StatusItemController: NSObject {
     private let statusItem: NSStatusItem
     private let settings: Settings
@@ -189,10 +188,10 @@ final class StatusItemController: NSObject {
 
 /// NSMenuItem driving a closure — spares one @objc selector plus
 /// representedObject plumbing per menu entry.
-private final class ActionMenuItem: NSMenuItem {
-    private let handler: () -> Void
+nonisolated private final class ActionMenuItem: NSMenuItem {
+    private let handler: @MainActor () -> Void
 
-    init(title: String, checked: Bool = false, handler: @escaping () -> Void) {
+    init(title: String, checked: Bool = false, handler: @escaping @MainActor () -> Void) {
         self.handler = handler
         super.init(title: title, action: #selector(invoke), keyEquivalent: "")
         target = self
@@ -203,7 +202,7 @@ private final class ActionMenuItem: NSMenuItem {
         fatalError("init(coder:) is not supported")
     }
 
-    @objc private func invoke() {
+    @MainActor @objc private func invoke() {
         handler()
     }
 }

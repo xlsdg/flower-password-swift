@@ -4,7 +4,7 @@ import CryptoKit
 /// Replaces the running app bundle with a downloaded release archive:
 /// verify the Ed25519 signature, extract, swap in place, and relaunch.
 /// A detached helper retains the old bundle until the new app acknowledges startup.
-enum SelfUpdater {
+nonisolated enum SelfUpdater {
     /// Pairs with the ED25519_PRIVATE_KEY repo secret that CI uses to sign
     /// release archives (scripts/sign-update.swift); release.yml refuses to
     /// publish when the two no longer match.
@@ -248,7 +248,7 @@ enum SelfUpdater {
     }
 }
 
-extension URLResponse {
+nonisolated extension URLResponse {
     func validateSuccessStatus() throws {
         guard let response = self as? HTTPURLResponse else {
             throw SelfUpdater.UpdateError.invalidResponse
@@ -259,7 +259,7 @@ extension URLResponse {
     }
 }
 
-extension Bundle {
+nonisolated extension Bundle {
     /// The bundle's marketing version — the single place the
     /// CFBundleShortVersionString key is spelled out.
     var shortVersion: String? {

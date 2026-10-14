@@ -3,7 +3,6 @@ import AppKit
 /// Shared NSAlert flows: `message` is the bold line, `detail` the smaller
 /// text below it. Every alert activates the app first — an accessory app
 /// otherwise keeps its modal stuck behind the frontmost app.
-@MainActor
 enum Dialogs {
     static func shortcutRegistrationFailed(shortcut: String) {
         show(.critical, String(localized: .shortcutRegistrationFailed(shortcut)))

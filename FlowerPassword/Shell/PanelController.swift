@@ -3,7 +3,6 @@ import AppKit
 import FlowerPasswordCore
 import FlowerPasswordDomain
 
-@MainActor
 final class PanelController: NSObject, NSWindowDelegate {
     private let panel: FloatingPanel
     private let settings: Settings

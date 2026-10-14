@@ -348,6 +348,7 @@
 				MARKETING_VERSION = 1.2.26;
 				PRODUCT_BUNDLE_IDENTIFIER = org.xlsdg.flowerpassword.debug;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_VERSION = 6.0;
 			};
 			name = Debug;
@@ -370,6 +371,7 @@
 				MARKETING_VERSION = 1.2.26;
 				PRODUCT_BUNDLE_IDENTIFIER = org.xlsdg.flowerpassword;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_VERSION = 6.0;
 			};
 			name = Release;
