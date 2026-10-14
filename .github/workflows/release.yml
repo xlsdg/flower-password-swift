@@ -119,9 +119,8 @@ jobs:
             echo "Requires macOS 14 or later. Universal binary (Apple Silicon and Intel)."
             echo
             echo "The app is not notarized; see the README for the one-time Gatekeeper steps."
-            echo "Installs of 1.2.27 or later update in place via \"Check for Updates\" in the menu;"
-            echo "earlier installs must update manually (see the README). The download is verified"
-            echo "against the Ed25519 signature in the \`appcast.xml\` asset."
+            echo "Installs of 1.2.27 or later update in place via \"Check for Updates\" in the menu; earlier installs must update manually (see the README)."
+            echo "The download is verified against the Ed25519 signature in the \`appcast.xml\` asset."
             echo
             if [ -n "$PREV_TAG" ]; then
               echo "## What's Changed"
