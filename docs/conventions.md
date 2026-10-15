@@ -38,7 +38,8 @@ Follow the existing `Settings` pattern (`FlowerPasswordCore/Sources/FlowerPasswo
 
 ## Tests
 
-- New Core logic ships with a test in `FlowerPasswordCoreTests/`, following the existing `@Suite`/`@Test` (swift-testing) style of the sibling files.
+- New Core logic ships with a test in `FlowerPasswordCoreTests/`, and new Domain logic in `FlowerPasswordDomainTests/`, following the existing `@Suite`/`@Test` (swift-testing) style of the sibling files.
+- Domain tests never wait on the clock: use a zero delay and `await` the task itself (`ClipboardGuard.pendingClear`), or cancel it, instead of `Task.sleep`.
 - Run `swift test --package-path FlowerPasswordCore` before committing anything under `FlowerPasswordCore/`.
 - User-visible behavior of the app (panel, menu, clipboard, settings) gets a test in `FlowerPasswordUITests/`. Keep logic in Core with unit tests rather than testing it through the UI.
 - Run `xcodebuild test -project FlowerPassword.xcodeproj -scheme FlowerPassword` before committing anything under `FlowerPassword/`.

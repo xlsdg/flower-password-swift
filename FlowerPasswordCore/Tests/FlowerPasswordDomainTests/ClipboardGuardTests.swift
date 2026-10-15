@@ -5,40 +5,39 @@ import Testing
 @MainActor
 @Suite("ClipboardGuard")
 struct ClipboardGuardTests {
-    private let delay = Duration.milliseconds(20)
-    private let settle = Duration.milliseconds(300)
-
     @Test("clears the password after the delay")
-    func clearsAfterDelay() async throws {
+    func clearsAfterDelay() async {
         let pasteboard = FakeClipboardStore()
-        let guardian = ClipboardGuard(pasteboard: pasteboard, clearDelay: delay)
+        let guardian = ClipboardGuard(pasteboard: pasteboard, clearDelay: .zero)
         guardian.copy("secret")
         #expect(pasteboard.text == "secret")
-        try await Task.sleep(for: settle)
+        await guardian.pendingClear?.value
         #expect(pasteboard.text == nil)
     }
 
     @Test("leaves the pasteboard alone when something else was copied meanwhile")
-    func respectsForeignCopy() async throws {
+    func respectsForeignCopy() async {
         let pasteboard = FakeClipboardStore()
-        let guardian = ClipboardGuard(pasteboard: pasteboard, clearDelay: delay)
+        let guardian = ClipboardGuard(pasteboard: pasteboard, clearDelay: .zero)
         guardian.copy("secret")
         pasteboard.externalCopy("user data")
-        try await Task.sleep(for: settle)
+        await guardian.pendingClear?.value
         #expect(pasteboard.text == "user data")
     }
 
-    @Test("a second copy restarts the countdown instead of clearing early")
+    @Test("a second copy cancels the first countdown instead of clearing early")
     func recopyRestarts() async throws {
         let pasteboard = FakeClipboardStore()
-        let guardian = ClipboardGuard(pasteboard: pasteboard, clearDelay: .milliseconds(600))
+        let guardian = ClipboardGuard(pasteboard: pasteboard, clearDelay: .seconds(60))
         guardian.copy("first")
-        try await Task.sleep(for: .milliseconds(400))
+        let first = try #require(guardian.pendingClear)
         guardian.copy("second")
-        try await Task.sleep(for: .milliseconds(400))
+        await first.value
+        #expect(first.isCancelled)
         #expect(pasteboard.text == "second")
-        try await Task.sleep(for: .milliseconds(600))
-        #expect(pasteboard.text == nil)
+        let second = try #require(guardian.pendingClear)
+        #expect(second.isCancelled == false)
+        guardian.clearIfOwned()
     }
 
     @Test("clearIfOwned clears immediately, as on quit")
