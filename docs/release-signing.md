@@ -1,31 +1,31 @@
 # Release signing certificate
 
-CI re-signs every release with one fixed self-signed certificate (see "Code signing" in [architecture.md](architecture.md)). macOS pins Accessibility grants to the resulting designated requirement, so this certificate must stay the same for the life of the app.
+One fixed self-signed certificate re-signs every release. macOS pins Accessibility grants to it, so it must never change (see Code signing in [architecture.md](architecture.md)).
 
 ## Where it lives
 
-- GitHub secrets: `SIGNING_CERTIFICATE_P12` (base64 of the `.p12`) and `SIGNING_CERTIFICATE_PASSWORD`.
-- Backup: the maintainer's password manager, entry `FlowerPassword code signing` (password field is the `.p12` password; the note says where the `.p12` file is stored).
+- GitHub secrets: `SIGNING_CERTIFICATE_P12` (base64 `.p12`), `SIGNING_CERTIFICATE_PASSWORD`.
+- Backup: maintainer's password manager, entry `FlowerPassword code signing` (password field = `.p12` password; note = where the `.p12` is stored).
 
-The update-archive key (`ED25519_PRIVATE_KEY`, the base64 32-byte Ed25519 seed Sparkle's tools accept) is separate. Its public half is `SUPublicEDKey` in `FlowerPassword/Info.plist`; CI refuses to publish when the two do not match. Rotating it strands every installed copy, because installs only trust the key they shipped with.
+The Sparkle update key `ED25519_PRIVATE_KEY` (base64 32-byte Ed25519 seed) is separate. Its public half is `SUPublicEDKey` in `FlowerPassword/Info.plist`; CI refuses to publish on a mismatch. Never rotate it either: installs trust only the key they shipped with.
 
-## Restore the secrets from the backup
+## Restore secrets from backup
 
 ```bash
 base64 -i FlowerPassword-signing.p12 | gh secret set SIGNING_CERTIFICATE_P12 -R xlsdg/flower-password-swift
 printf '%s' "$PASSWORD" | gh secret set SIGNING_CERTIFICATE_PASSWORD -R xlsdg/flower-password-swift
 ```
 
-Check the backup is the right certificate. The SHA-1 fingerprint must match the `certificate leaf` hash that `codesign -d -r- /Applications/FlowerPassword.app` prints:
+Verify: the SHA-1 fingerprint must equal the `certificate leaf` hash from `codesign -d -r- /Applications/FlowerPassword.app`:
 
 ```bash
 openssl pkcs12 -in FlowerPassword-signing.p12 -nokeys -passin pass:"$PASSWORD" \
   | openssl x509 -noout -fingerprint -sha1
 ```
 
-## Create a new certificate (only if the backup is lost)
+## Create a new certificate (backup lost only)
 
-Every existing user will lose the Accessibility grant once and must re-enable Auto-Type. Say so in the release notes.
+Every user loses the Accessibility grant once and must re-enable Auto-Type; say so in the release notes.
 
 ```bash
 D=$(mktemp -d) && cd "$D"
@@ -47,4 +47,4 @@ PASSWORD=$(openssl rand -base64 24)
 openssl pkcs12 -export -inkey key.pem -in cert.pem -out FlowerPassword-signing.p12 -passout pass:"$PASSWORD"
 ```
 
-Then back up the `.p12` and `$PASSWORD`, set both secrets as above, and `rm -rf "$D"`, because `key.pem` is the unencrypted private key.
+Then back up the `.p12` and `$PASSWORD`, set both secrets as above, and `rm -rf "$D"` (`key.pem` is the unencrypted private key).

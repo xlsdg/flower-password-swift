@@ -1,46 +1,37 @@
 # AGENTS.md
 
-This file provides guidance to agentic coding tools when working with code in this repository.
-
-## Project
-
-A native macOS menu-bar app (Swift, AppKit; Sparkle is the only third-party dependency) that derives site-specific passwords from a memory password + distinction code using the Flower Password algorithm. Nothing is stored; the same inputs always yield the same password. Requires macOS 14+ and Xcode 26+.
+Native macOS menu-bar app (Swift + AppKit, macOS 14+, Xcode 26+) that derives site passwords from a memory password + distinction code via the Flower Password algorithm. Stateless: same inputs → same password, nothing stored.
 
 ## Commands
 
 ```bash
-# Run the algorithm test suite
+# Unit tests: Core + Domain (swift-testing; --filter takes a @Suite type or @Test name)
 swift test --package-path FlowerPasswordCore
+swift test --package-path FlowerPasswordCore --filter PublicSuffixTests
 
-# Run the end-to-end UI tests (drives the real app: takes over mouse and clipboard, ~4 min)
+# UI tests: drive the real app, take over mouse + clipboard, ~4 min
 xcodebuild test -project FlowerPassword.xcodeproj -scheme FlowerPassword
 xcodebuild test -project FlowerPassword.xcodeproj -scheme FlowerPassword \
   -only-testing:FlowerPasswordUITests/FlowerPasswordUITests/testEscClosesPanel
 
-# Run a single test (swift-testing: filter by @Suite type or @Test function name)
-swift test --package-path FlowerPasswordCore --filter PublicSuffixTests
-swift test --package-path FlowerPasswordCore --filter urlText
-
-# Format (CI runs `lint --strict` over the same paths)
+# Format (CI: same paths with `lint --strict`)
 xcrun swift-format format --in-place --recursive FlowerPassword FlowerPasswordUITests FlowerPasswordCore/Sources FlowerPasswordCore/Tests
 
-# Build the app
+# Build; full release = all tests + universal build + zip → dist/
 xcodebuild -project FlowerPassword.xcodeproj -scheme FlowerPassword -configuration Release build
-
-# Full release build: Core + UI tests + universal (arm64/x86_64) build + zip into dist/
 ./scripts/release.sh
 ```
 
-Verification: run `swift test --package-path FlowerPasswordCore` before committing anything that touches `FlowerPasswordCore/`, and the UI tests before committing anything that touches `FlowerPassword/`.
+Before committing: touched `FlowerPasswordCore/` → unit tests green; touched `FlowerPassword/` → UI tests green.
 
-## Architecture
+## Docs
 
-See [docs/architecture.md](docs/architecture.md) for the layer breakdown and the cross-file flows (localization, Sparkle updates, code signing, releasing, clipboard → distinction code).
+- `docs/architecture.md`: read before touching localization, Sparkle updates, code signing, releasing, the UI-test harness, or browser/clipboard → distinction-code prefill.
+- `docs/conventions.md`: read before adding code: layer placement, style, new persisted setting, tests, commits, pre-ship checklist.
 
-See [docs/conventions.md](docs/conventions.md) for how to add to it: layering rules, style, the checklist for a new persisted setting, test/commit expectations.
+## Hard rules
 
-## Constraints
-
-- **The algorithm is frozen.** `FlowerPasswordCore/Sources/FlowerPasswordCore/FlowerPassword.swift` must match flowerpassword.com byte-for-byte (HMAC-MD5 construction); equivalence is enforced by the 42-case `golden_vectors.json` fixture in the Core tests. Never change the algorithm or the golden vectors.
-- The memory password must never be written to disk, and the app makes no network requests except the manual Sparkle update check/download against GitHub Releases.
-- Only system frameworks (AppKit, CryptoKit, Carbon, ServiceManagement, Observation) plus Sparkle for updates — do not add other third-party dependencies. The UI is intentionally pure AppKit; do not reintroduce SwiftUI.
+- **Algorithm frozen.** `FlowerPasswordCore/Sources/FlowerPasswordCore/FlowerPassword.swift` (HMAC-MD5) matches flowerpassword.com byte-for-byte, pinned by `golden_vectors.json`. Leave both as-is; if a task seems to need changing them, stop and ask.
+- Memory password lives only in memory: never disk, logs, or crash reports.
+- Network: only the manual Sparkle update check against GitHub Releases.
+- Dependencies: system frameworks + Sparkle. UI is pure AppKit, no SwiftUI.
